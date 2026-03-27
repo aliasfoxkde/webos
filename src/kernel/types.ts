@@ -22,7 +22,7 @@ export interface AppDefinition {
   title: string;
   description: string;
   icon: string;
-  component: () => Promise<React.ComponentType>;
+  component?: () => Promise<React.ComponentType>;
   defaultWindow: {
     width: number;
     height: number;

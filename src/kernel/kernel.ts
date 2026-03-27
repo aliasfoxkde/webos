@@ -2,6 +2,7 @@ import { eventBus, EventBus } from './event-bus';
 import { processManager, ProcessManager } from './process-manager';
 import { appRegistry, AppRegistry } from './app-registry';
 import { permissionManager, PermissionManager } from './permissions';
+import { registerBuiltinApps } from './builtin-apps';
 import type { AppDefinition, PermissionType } from './types';
 
 /**
@@ -35,6 +36,7 @@ export class Kernel {
    */
   boot(): void {
     if (this._booted) return;
+    registerBuiltinApps();
     this._booted = true;
     this.events.emit('kernel:boot', {});
   }

@@ -1,0 +1,159 @@
+import type { AppDefinition } from './types';
+import { kernel } from './kernel';
+
+/**
+ * Register all built-in applications with the kernel.
+ * Called during boot.
+ */
+export function registerBuiltinApps(): void {
+  const apps: AppDefinition[] = [
+    {
+      id: 'file-manager',
+      title: 'File Manager',
+      description: 'Browse and manage files',
+      icon: '📁',
+      defaultWindow: { width: 700, height: 480, minWidth: 400, minHeight: 300 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+      fileAssociations: [],
+    },
+    {
+      id: 'writer',
+      title: 'Writer',
+      description: 'Word processor',
+      icon: '📝',
+      defaultWindow: { width: 750, height: 550, minWidth: 400, minHeight: 300 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+      fileAssociations: ['text/html', 'text/plain', 'text/markdown'],
+    },
+    {
+      id: 'calc',
+      title: 'Calc',
+      description: 'Spreadsheet',
+      icon: '📊',
+      defaultWindow: { width: 800, height: 550, minWidth: 500, minHeight: 350 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+      fileAssociations: ['text/csv'],
+    },
+    {
+      id: 'notes',
+      title: 'Notes',
+      description: 'Block editor / notepad',
+      icon: '📋',
+      defaultWindow: { width: 650, height: 500, minWidth: 350, minHeight: 250 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+    },
+    {
+      id: 'draw',
+      title: 'Draw',
+      description: 'Canvas drawing',
+      icon: '🎨',
+      defaultWindow: { width: 800, height: 600, minWidth: 400, minHeight: 300 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+      fileAssociations: ['application/x-webos-draw'],
+    },
+    {
+      id: 'impress',
+      title: 'Impress',
+      description: 'Presentations',
+      icon: '📽️',
+      defaultWindow: { width: 960, height: 640, minWidth: 600, minHeight: 400 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+    },
+    {
+      id: 'pdf-viewer',
+      title: 'PDF Viewer',
+      description: 'View PDF files',
+      icon: '📕',
+      defaultWindow: { width: 700, height: 500, minWidth: 400, minHeight: 300 },
+      permissions: ['filesystem:read'],
+      singleton: false,
+      systemApp: true,
+      fileAssociations: ['application/pdf'],
+    },
+    {
+      id: 'terminal',
+      title: 'Terminal',
+      description: 'Command-line interface',
+      icon: '💻',
+      defaultWindow: { width: 650, height: 420, minWidth: 350, minHeight: 200 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+    },
+    {
+      id: 'calculator',
+      title: 'Calculator',
+      description: 'Standard calculator',
+      icon: '🔢',
+      defaultWindow: { width: 320, height: 480, resizable: false },
+      permissions: [],
+      singleton: false,
+      systemApp: true,
+    },
+    {
+      id: 'text-editor',
+      title: 'Text Editor',
+      description: 'Plain text / code editor',
+      icon: '📄',
+      defaultWindow: { width: 700, height: 500, minWidth: 400, minHeight: 300 },
+      permissions: ['filesystem:read', 'filesystem:write'],
+      singleton: false,
+      systemApp: true,
+      fileAssociations: [
+        'text/javascript', 'text/typescript', 'application/json',
+        'text/css', 'text/xml', 'text/x-log',
+      ],
+    },
+    {
+      id: 'image-viewer',
+      title: 'Image Viewer',
+      description: 'View images',
+      icon: '🖼️',
+      defaultWindow: { width: 600, height: 500, minWidth: 300, minHeight: 200 },
+      permissions: ['filesystem:read'],
+      singleton: false,
+      systemApp: true,
+      fileAssociations: ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/webp'],
+    },
+    {
+      id: 'task-manager',
+      title: 'Task Manager',
+      description: 'View running processes',
+      icon: '📈',
+      defaultWindow: { width: 500, height: 400, resizable: false },
+      permissions: [],
+      singleton: false,
+      systemApp: true,
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      description: 'System settings',
+      icon: '⚙️',
+      defaultWindow: { width: 550, height: 480, minWidth: 400, minHeight: 350 },
+      permissions: [],
+      singleton: false,
+      systemApp: true,
+    },
+  ];
+
+  for (const app of apps) {
+    try {
+      kernel.registerApp(app);
+    } catch {
+      // Already registered (e.g. hot reload)
+    }
+  }
+}
