@@ -4,13 +4,11 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
 
 # R2 bucket for file storage
-# Create with: npx wrangler r2 bucket create webos-files
 [[r2_buckets]]
 binding = "FILES"
 bucket_name = "webos-files"
 
 # KV namespace for user settings
-# Create with: npx wrangler kv namespace create WEBOS_SETTINGS
 [[kv_namespaces]]
 binding = "SETTINGS"
-id = ""
+id = "66e352bbad954b22b80d5e91f60d3635"
