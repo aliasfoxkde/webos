@@ -1,15 +1,54 @@
+import { useEffect } from 'react';
+import { useKernelStore } from '@/stores/kernel-store';
+import { Desktop } from '@/shell/Desktop';
+import { Taskbar } from '@/shell/Taskbar';
+import { WindowContainer } from '@/wm/WindowContainer';
+import { ThemeProvider } from '@/themes/theme-context';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+
+function AppContent() {
+  const boot = useKernelStore((s) => s.boot);
+  const booted = useKernelStore((s) => s.booted);
+
+  useKeyboardShortcuts();
+
+  useEffect(() => {
+    boot();
+  }, [boot]);
+
+  if (!booted) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[var(--os-desktop-bg)]">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold" style={{ color: 'var(--os-accent-light)' }}>
+            WebOS
+          </h1>
+          <p className="mt-2" style={{ color: 'var(--os-text-secondary)' }}>
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen w-screen overflow-hidden">
+      <Desktop />
+      <WindowContainer renderContent={(windowId, appId) => (
+        <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
+          <p>{appId} — content placeholder</p>
+        </div>
+      )} />
+      <Taskbar />
+    </div>
+  );
+}
+
 function App() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold" style={{ color: 'var(--os-accent-light)' }}>
-          WebOS
-        </h1>
-        <p className="mt-2" style={{ color: 'var(--os-text-secondary)' }}>
-          Open Source Web Operating System
-        </p>
-      </div>
-    </div>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

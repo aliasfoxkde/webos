@@ -3,13 +3,15 @@ import { render, screen } from '@testing-library/react';
 import App from './App';
 
 describe('App', () => {
-  it('renders WebOS title', () => {
+  it('renders desktop icons after boot', () => {
     render(<App />);
-    expect(screen.getByText('WebOS')).toBeDefined();
+    expect(screen.getByText('File Manager')).toBeDefined();
+    expect(screen.getByText('Terminal')).toBeDefined();
+    expect(screen.getByText('Settings')).toBeDefined();
   });
 
-  it('renders subtitle', () => {
+  it('renders the start button in taskbar', () => {
     render(<App />);
-    expect(screen.getByText('Open Source Web Operating System')).toBeDefined();
+    expect(screen.getByText('Start')).toBeDefined();
   });
 });

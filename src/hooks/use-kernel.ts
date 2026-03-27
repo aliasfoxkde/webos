@@ -1,17 +1,61 @@
+import { useCallback } from 'react';
 import { useKernelStore } from '@/stores/kernel-store';
+import { useWindowStore } from '@/wm/window-store';
 import { kernel } from '@/kernel/kernel';
 import type { PermissionType } from '@/kernel/types';
 
 /**
  * Hook to access kernel from components.
+ * Bridges kernel process management with window manager.
  */
 export function useKernel() {
   const { booted, processes, focusedProcessId, apps } = useKernelStore();
-  const launchApp = useKernelStore((s) => s.launchApp);
+  const launchProcess = useKernelStore((s) => s.launchApp);
   const closeApp = useKernelStore((s) => s.closeApp);
   const focusApp = useKernelStore((s) => s.focusApp);
   const minimizeApp = useKernelStore((s) => s.minimizeApp);
   const restoreApp = useKernelStore((s) => s.restoreApp);
+  const openWindow = useWindowStore((s) => s.open);
+  const closeWindow = useWindowStore((s) => s.close);
+  const focusWindow = useWindowStore((s) => s.focus);
+
+  const launchApp = useCallback(
+    (appId: string, title?: string) => {
+      const appDef = kernel.apps.get(appId);
+      if (!appDef) return null;
+
+      // Open a window for this app
+      const win = openWindow({
+        processId: '', // will be set after process creation
+        appId,
+        title: title ?? appDef.title ?? appId,
+        icon: appDef.icon,
+      });
+
+      // Launch the process
+      const pid = launchProcess(appId, win.id);
+      return pid;
+    },
+    [launchProcess, openWindow],
+  );
+
+  const closeAppWindow = useCallback(
+    (processId: string) => {
+      const win = useWindowStore.getState().getByProcessId(processId);
+      if (win) closeWindow(win.id);
+      closeApp(processId);
+    },
+    [closeWindow, closeApp],
+  );
+
+  const focusAppWindow = useCallback(
+    (processId: string) => {
+      const win = useWindowStore.getState().getByProcessId(processId);
+      if (win) focusWindow(win.id);
+      focusApp(processId);
+    },
+    [focusWindow, focusApp],
+  );
 
   return {
     booted,
@@ -19,8 +63,8 @@ export function useKernel() {
     focusedProcessId,
     apps,
     launchApp,
-    closeApp,
-    focusApp,
+    closeApp: closeAppWindow,
+    focusApp: focusAppWindow,
     minimizeApp,
     restoreApp,
     checkPermission: (appId: string, perm: PermissionType) =>
