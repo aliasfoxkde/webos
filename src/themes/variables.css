@@ -24,6 +24,15 @@
   --os-window-border: #334155;
   --os-window-shadow: rgba(0, 0, 0, 0.5);
 
+  /* Window Manager */
+  --wm-border: #334155;
+  --wm-border-active: #3b82f6;
+  --wm-titlebar-bg: #0f172a;
+  --wm-titlebar-bg-active: #1e293b;
+  --wm-title: #94a3b8;
+  --wm-title-active: #f1f5f9;
+  --wm-content-bg: #1e293b;
+
   /* Taskbar */
   --os-taskbar-bg: rgba(15, 23, 42, 0.9);
   --os-taskbar-border: rgba(51, 65, 85, 0.5);
@@ -91,6 +100,14 @@
   --os-window-border: #e2e8f0;
   --os-window-shadow: rgba(0, 0, 0, 0.1);
 
+  --wm-border: #e2e8f0;
+  --wm-border-active: #2563eb;
+  --wm-titlebar-bg: #f1f5f9;
+  --wm-titlebar-bg-active: #ffffff;
+  --wm-title: #64748b;
+  --wm-title-active: #0f172a;
+  --wm-content-bg: #ffffff;
+
   --os-taskbar-bg: rgba(248, 250, 252, 0.9);
   --os-taskbar-border: rgba(226, 232, 240, 0.8);
 
@@ -131,6 +148,14 @@
   --os-window-titlebar: #000000;
   --os-window-border: #ffffff;
   --os-window-shadow: rgba(255, 255, 255, 0.2);
+
+  --wm-border: #ffffff;
+  --wm-border-active: #ffdd00;
+  --wm-titlebar-bg: #000000;
+  --wm-titlebar-bg-active: #1a1a1a;
+  --wm-title: #cccccc;
+  --wm-title-active: #ffffff;
+  --wm-content-bg: #1a1a1a;
 
   --os-taskbar-bg: rgba(0, 0, 0, 0.95);
   --os-taskbar-border: rgba(255, 255, 255, 0.5);
