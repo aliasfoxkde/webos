@@ -11,6 +11,7 @@ import { Writer } from '@/apps/writer';
 import { Calc } from '@/apps/calc';
 import { Notes } from '@/apps/notes';
 import { Draw } from '@/apps/draw';
+import { Impress } from '@/apps/impress';
 
 function AppContent() {
   const boot = useKernelStore((s) => s.boot);
@@ -52,6 +53,8 @@ function AppContent() {
             return <Notes />;
           case 'draw':
             return <Draw />;
+          case 'impress':
+            return <Impress />;
           default:
             return (
               <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
