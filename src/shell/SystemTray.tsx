@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Clock } from './Clock';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSyncStatus } from '@/vfs/sync-r2';

@@ -1,4 +1,3 @@
-import { db } from '@/vfs/db';
 import type { WindowBounds } from './types';
 
 interface PersistedWindowState {

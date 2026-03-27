@@ -1,4 +1,7 @@
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useCallback, useRef, useEffect } from 'react';
+
+type AnyPointerEvent = ReactPointerEvent<Element>;
 import type { WindowBounds, WindowSize } from './types';
 
 interface ResizeOptions {
@@ -15,7 +18,7 @@ export type ResizeHandle =
   | 'ne' | 'nw' | 'se' | 'sw';
 
 export function useWindowResize({
-  windowId,
+  windowId: _windowId,
   bounds,
   minSize = { width: 320, height: 240 },
   onResize,
@@ -28,7 +31,7 @@ export function useWindowResize({
   const startBounds = useRef<WindowBounds>({ ...bounds });
 
   const handlePointerDown = useCallback(
-    (e: React.PointerEvent, direction: ResizeHandle) => {
+    (e: AnyPointerEvent, direction: ResizeHandle) => {
       if (disabled || e.button !== 0) return;
       e.preventDefault();
       e.stopPropagation();
@@ -44,7 +47,7 @@ export function useWindowResize({
   );
 
   const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
+    (e: AnyPointerEvent) => {
       if (!isResizing.current || !handle.current) return;
 
       const dx = e.clientX - startPos.current.x;
@@ -80,7 +83,7 @@ export function useWindowResize({
   );
 
   const handlePointerUp = useCallback(
-    (e: React.PointerEvent) => {
+    (e: AnyPointerEvent) => {
       if (!isResizing.current) return;
 
       isResizing.current = false;

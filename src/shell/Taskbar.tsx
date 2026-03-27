@@ -8,7 +8,7 @@ export function Taskbar() {
   const [showStartMenu, setShowStartMenu] = React.useState(false);
   const windows = useWindowStore((s) => s.windows);
   const focusWindow = useWindowStore((s) => s.focus);
-  const { apps } = useKernel();
+  const { apps: _apps } = useKernel();
 
   const handleTaskbarClick = (windowId: string) => {
     const win = useWindowStore.getState().get(windowId);

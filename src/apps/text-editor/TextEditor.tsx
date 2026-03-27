@@ -183,7 +183,7 @@ export function TextEditor() {
     const tab = tabs.find((t) => t.id === activeTabId);
     if (!tab) return;
 
-    let path = tab.path || savePath;
+    const path = tab.path || savePath;
     if (!path) {
       setShowSaveDialog(true);
       return;

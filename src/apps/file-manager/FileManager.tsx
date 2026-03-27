@@ -4,7 +4,7 @@ import { Breadcrumb } from './Breadcrumb';
 import { FileGrid } from './FileGrid';
 import { Toolbar } from './Toolbar';
 import { useFileOperations } from './use-file-operations';
-import { readdir, stat, mkdir, writeFile } from '@/vfs/vfs';
+import { readdir } from '@/vfs/vfs';
 import type { FileNode } from '@/vfs/types';
 
 interface FileManagerProps {

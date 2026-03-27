@@ -8,6 +8,9 @@ import type {
 } from './types';
 import { DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE, centerWindow } from './types';
 import { eventBus } from '@/kernel/event-bus';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('wm');
 
 interface WindowStore {
   windows: WindowState[];
@@ -80,6 +83,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     }));
 
     eventBus.emit('window:open', { windowId: newWindow.id, appId: config.appId });
+    log.debug(`Window opened: ${newWindow.id} ("${config.appId}")`);
     return newWindow;
   },
 
@@ -87,6 +91,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const window = get().get(windowId);
     if (!window) return;
 
+    log.debug(`Window closed: ${windowId}`);
     set((state) => {
       const remaining = state.windows.filter((w) => w.id !== windowId);
       const topWindow = remaining

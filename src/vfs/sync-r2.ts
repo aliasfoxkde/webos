@@ -128,7 +128,7 @@ export async function fullSync(token: string, userId: string): Promise<{
 }> {
   let uploaded = 0;
   let downloaded = 0;
-  let conflicts = 0;
+  const conflicts = 0;
 
   try {
     const result = await filesApi.list(token);

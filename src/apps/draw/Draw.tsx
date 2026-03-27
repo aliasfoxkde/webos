@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { writeFile, readFile } from '@/vfs/vfs';
 
@@ -83,7 +83,6 @@ export function Draw({ filePath }: DrawProps) {
     if (!canvas || activeTool === 'select' || activeTool === 'freehand' || activeTool === 'eraser') return;
 
     const pointer = canvas.getScenePoint(opt.e);
-    const isShiftKey = opt.e.shiftKey;
 
     switch (activeTool) {
       case 'rect':

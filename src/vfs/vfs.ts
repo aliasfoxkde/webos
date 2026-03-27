@@ -3,6 +3,9 @@ import { getMimeType } from './mime';
 import { eventBus } from '@/kernel/event-bus';
 import type { FileNode, VFSEvent } from './types';
 import { enqueueSync } from './sync-r2';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('vfs');
 
 let idCounter = 0;
 
@@ -109,6 +112,7 @@ export async function readdir(dirPath: string): Promise<FileNode[]> {
  * Read file content.
  */
 export async function readFile(path: string): Promise<FileNode | undefined> {
+  log.debug(`readFile(${path})`);
   const node = await stat(path);
   if (!node || node.type !== 'file') return undefined;
   return node;
@@ -122,6 +126,7 @@ export async function writeFile(
   content: string | ArrayBuffer,
   mimeType?: string,
 ): Promise<FileNode> {
+  log.debug(`writeFile(${path}, ${typeof content === 'string' ? `${content.length} chars` : 'binary'})`);
   const { parentId, name } = await resolvePath(path);
   const existing = await findOne(
     (n) => n.parentId === parentId && n.name === name && n.type === 'file',
@@ -166,6 +171,7 @@ export async function writeFile(
  * Create a directory.
  */
 export async function mkdir(path: string): Promise<FileNode> {
+  log.debug(`mkdir(${path})`);
   const { parentId, name } = await resolvePath(path);
 
   const existing = await findOne(
@@ -196,6 +202,7 @@ export async function mkdir(path: string): Promise<FileNode> {
  * Remove a file or directory.
  */
 export async function rm(path: string): Promise<void> {
+  log.debug(`rm(${path})`);
   const node = await stat(path);
   if (!node) return;
 
@@ -232,6 +239,7 @@ async function rmById(id: string): Promise<void> {
  * Move/rename a file or directory.
  */
 export async function mv(fromPath: string, toPath: string): Promise<void> {
+  log.debug(`mv(${fromPath} → ${toPath})`);
   const node = await stat(fromPath);
   if (!node) throw new Error(`Not found: ${fromPath}`);
 
@@ -251,6 +259,7 @@ export async function mv(fromPath: string, toPath: string): Promise<void> {
  * Copy a file.
  */
 export async function cp(fromPath: string, toPath: string): Promise<FileNode> {
+  log.debug(`cp(${fromPath} → ${toPath})`);
   const node = await stat(fromPath);
   if (!node) throw new Error(`Not found: ${fromPath}`);
   if (node.type === 'folder') throw new Error('Cannot copy directories');
@@ -319,7 +328,6 @@ export async function clear(): Promise<void> {
 }
 
 function emitVFS(type: VFSEvent['type'], path: string, oldPath?: string): void {
-  const event: VFSEvent = { type, path, oldPath, timestamp: now() };
   const kernelType = `file:${type}` as const;
   const payload: Record<string, string> = { path };
   if (oldPath) payload.from = oldPath;

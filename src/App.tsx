@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useKernelStore } from '@/stores/kernel-store';
 import { Desktop } from '@/shell/Desktop';
 import { Taskbar } from '@/shell/Taskbar';
@@ -6,6 +6,9 @@ import { WindowContainer } from '@/wm/WindowContainer';
 import { ThemeProvider } from '@/themes/theme-context';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { LoadingScreen } from '@/ui/LoadingScreen';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('app');
 
 // Code-split all apps for smaller initial bundle
 const FileManager = lazy(() => import('@/apps/file-manager').then((m) => ({ default: m.FileManager })));
@@ -72,6 +75,7 @@ function AppContent() {
   useKeyboardShortcuts();
 
   useEffect(() => {
+    log.info('App mounting — booting kernel...');
     boot();
   }, [boot]);
 

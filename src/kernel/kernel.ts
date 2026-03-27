@@ -3,7 +3,10 @@ import { processManager, ProcessManager } from './process-manager';
 import { appRegistry, AppRegistry } from './app-registry';
 import { permissionManager, PermissionManager } from './permissions';
 import { registerBuiltinApps } from './builtin-apps';
+import { createLogger } from '@/lib/logger';
 import type { AppDefinition, PermissionType } from './types';
+
+const log = createLogger('kernel');
 
 /**
  * Kernel facade - the central entry point for the OS.
@@ -35,10 +38,15 @@ export class Kernel {
    * Boot the kernel. Initializes default state.
    */
   boot(): void {
-    if (this._booted) return;
+    if (this._booted) {
+      log.warn('boot() called but kernel already booted');
+      return;
+    }
+    log.info('Booting kernel...');
     registerBuiltinApps();
     this._booted = true;
     this.events.emit('kernel:boot', {});
+    log.info(`Kernel booted. ${this.apps.getAll().length} apps registered.`);
   }
 
   /**
@@ -54,9 +62,14 @@ export class Kernel {
    */
   launchApp(appId: string, windowId: string): string | null {
     const app = this.apps.get(appId);
-    if (!app) return null;
+    if (!app) {
+      log.error(`launchApp: app "${appId}" not found in registry`);
+      return null;
+    }
 
+    log.info(`Launching app "${appId}" (window: ${windowId})`);
     const process = this.processes.launch(app, windowId);
+    log.debug(`Process ${process.id} created for "${appId}"`);
     return process.id;
   }
 
@@ -64,6 +77,7 @@ export class Kernel {
    * Close an app by process ID.
    */
   closeApp(processId: string): void {
+    log.info(`Closing process ${processId}`);
     this.processes.close(processId);
   }
 
@@ -71,6 +85,7 @@ export class Kernel {
    * Focus an app by process ID.
    */
   focusApp(processId: string): void {
+    log.debug(`Focusing process ${processId}`);
     this.processes.focus(processId);
   }
 
@@ -99,9 +114,11 @@ export class Kernel {
    * Shutdown the kernel.
    */
   shutdown(): void {
+    log.info('Shutting down kernel...');
     this.events.emit('kernel:shutdown', {});
     this.processes.reset();
     this._booted = false;
+    log.info('Kernel shut down.');
   }
 }
 

@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
-  type CellData,
   type SheetData,
   getCellData,
   setCellData,
@@ -32,9 +31,6 @@ export function Calc() {
   const engine = useMemo(() => createEngine(sheetData), [sheetData]);
 
   const selectedData = getCellData(sheetData, selectedCell.row, selectedCell.col);
-  const displayValue = editingCell
-    ? editValue
-    : formatCellValue(getCalculatedValue(engine, 0, selectedCell.row, selectedCell.col) ?? selectedData.value);
 
   const handleCellClick = useCallback((row: number, col: number) => {
     if (editingCell) {
@@ -107,8 +103,10 @@ export function Calc() {
       case 'Delete':
       case 'Backspace':
         e.preventDefault();
-        const newData = setCellData(sheetData, row, col, { value: '' });
-        setSheetData(newData);
+        {
+          const newData = setCellData(sheetData, row, col, { value: '' });
+          setSheetData(newData);
+        }
         break;
       default:
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {

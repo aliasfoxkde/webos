@@ -1,5 +1,8 @@
 import type { Process, ProcessState, AppDefinition } from './types';
 import { eventBus } from './event-bus';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('process-mgr');
 
 let processCounter = 0;
 let focusCounter = 0;
@@ -26,6 +29,7 @@ export class ProcessManager {
     if (app.singleton) {
       const existing = this.findByAppId(app.id);
       if (existing) {
+        log.info(`Singleton "${app.id}" already running (${existing.id}), focusing`);
         this.focus(existing.id);
         return existing;
       }
@@ -41,6 +45,7 @@ export class ProcessManager {
     };
 
     this.processes.set(process.id, process);
+    log.debug(`Process created: ${process.id} for "${app.id}"`);
     eventBus.emit('app:launch', { processId: process.id, appId: app.id });
 
     // Transition to running after launch
@@ -92,8 +97,12 @@ export class ProcessManager {
    */
   close(processId: string): void {
     const proc = this.processes.get(processId);
-    if (!proc) return;
+    if (!proc) {
+      log.warn(`close: process ${processId} not found`);
+      return;
+    }
 
+    log.info(`Closing process ${processId} ("${proc.appId}")`);
     proc.state = 'closing';
     eventBus.emit('app:close', { processId: proc.id, appId: proc.appId });
     this.processes.delete(processId);
@@ -106,6 +115,7 @@ export class ProcessManager {
     const proc = this.processes.get(processId);
     if (!proc) return;
 
+    log.error(`Process ${processId} ("${proc.appId}") crashed: ${error.message}`);
     proc.state = 'crashed';
     eventBus.emit('app:crash', { processId: proc.id, appId: proc.appId, error });
   }

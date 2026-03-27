@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useWindowStore } from '@/wm/window-store';
-import { useKernelStore } from '@/stores/kernel-store';
 
 interface ShortcutConfig {
   key: string;

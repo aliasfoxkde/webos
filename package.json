@@ -10,8 +10,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "vitest run && eslint src/",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
+    "check": "tsc -b --noEmit && vitest run && eslint src/",
     "deploy": "npm run build && npx wrangler pages deploy dist --project-name webos"
   },
   "dependencies": {
@@ -54,7 +58,8 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
+    "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
@@ -68,6 +73,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.0",
     "fake-indexeddb": "^6.2.5",
+    "globals": "^17.4.0",
     "jsdom": "^25.0.0",
     "postcss": "^8.0.0",
     "tailwindcss": "^4.0.0",

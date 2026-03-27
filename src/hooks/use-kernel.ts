@@ -2,7 +2,10 @@ import { useCallback } from 'react';
 import { useKernelStore } from '@/stores/kernel-store';
 import { useWindowStore } from '@/wm/window-store';
 import { kernel } from '@/kernel/kernel';
+import { createLogger } from '@/lib/logger';
 import type { PermissionType } from '@/kernel/types';
+
+const log = createLogger('hook:kernel');
 
 /**
  * Hook to access kernel from components.
@@ -22,7 +25,10 @@ export function useKernel() {
   const launchApp = useCallback(
     (appId: string, title?: string) => {
       const appDef = kernel.apps.get(appId);
-      if (!appDef) return null;
+      if (!appDef) {
+        log.error(`launchApp: "${appId}" not found in app registry`);
+        return null;
+      }
 
       // Open a window for this app
       const win = openWindow({
@@ -33,6 +39,7 @@ export function useKernel() {
       });
 
       // Launch the process
+      log.info(`launchApp: "${appId}" → window ${win.id}`);
       const pid = launchProcess(appId, win.id);
       return pid;
     },

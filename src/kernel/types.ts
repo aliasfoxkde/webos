@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+
 // Process states
 export type ProcessState = 'launching' | 'running' | 'minimized' | 'closing' | 'crashed';
 
@@ -22,7 +24,7 @@ export interface AppDefinition {
   title: string;
   description: string;
   icon: string;
-  component?: () => Promise<React.ComponentType>;
+  component?: () => Promise<ComponentType>;
   defaultWindow: {
     width: number;
     height: number;

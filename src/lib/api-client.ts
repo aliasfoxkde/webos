@@ -3,8 +3,8 @@
  */
 const BASE_URL = '/api';
 
-function getHeaders(token?: string): HeadersInit {
-  const headers: HeadersInit = {
+function getHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
   if (token) {
@@ -15,7 +15,7 @@ function getHeaders(token?: string): HeadersInit {
 
 async function request<T>(
   path: string,
-  options: RequestInit = {},
+  options: globalThis.RequestInit = {},
   token?: string,
 ): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {

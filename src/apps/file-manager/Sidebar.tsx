@@ -1,6 +1,3 @@
-import React from 'react';
-import { readdir } from '@/vfs/vfs';
-import type { FileNode } from '@/vfs/types';
 
 interface SidebarProps {
   currentPath: string;

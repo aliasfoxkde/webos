@@ -201,7 +201,7 @@ export function Calculator() {
           setDisplay(digit);
           setExpression((prev) => {
             // Replace trailing 0 or add
-            if (prev.endsWith('0') && /[\+\-\*\/\%\(]$/.test(prev.slice(0, -1))) {
+            if (prev.endsWith('0') && /[+\-*/%()]/.test(prev.slice(0, -1))) {
               return prev.slice(0, -1) + digit;
             }
             return prev + digit;

@@ -16,7 +16,7 @@ interface AuthState {
 const TOKEN_KEY = 'webos-auth-token';
 const USER_KEY = 'webos-auth-user';
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set, _get) => ({
   token: localStorage.getItem(TOKEN_KEY),
   userId: JSON.parse(localStorage.getItem(USER_KEY) ?? 'null')?.id ?? null,
   username: JSON.parse(localStorage.getItem(USER_KEY) ?? 'null')?.username ?? null,
