@@ -1,8 +1,10 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useWindowStore } from './window-store';
 import { useWindowDrag } from './use-window-drag';
 import { useWindowResize, getResizeCursor, type ResizeHandle } from './use-window-resize';
 import { useWindowSnap } from './use-window-snap';
+import { ContextMenu } from '@/shell/ContextMenu';
+import { getWindowTitleBarMenuItems } from '@/shell/context-menu-items';
 import type { WindowState } from './types';
 import { MIN_WINDOW_SIZE } from './types';
 
@@ -14,7 +16,7 @@ interface WindowFrameProps {
 export function WindowFrame({ window: win, children }: WindowFrameProps) {
   const { close, focus, minimize, maximize, restore, move, updateBounds } = useWindowStore();
   const titleBarRef = useRef<HTMLDivElement>(null);
-  const isDoubleClicked = useRef(false);
+  const [titleMenu, setTitleMenu] = useState<{ x: number; y: number } | null>(null);
 
   const handleDragMove = useCallback(
     (dx: number, dy: number) => {
@@ -90,25 +92,34 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
 
   const handleTitleBarPointerUp = useCallback(
     (e: React.PointerEvent) => {
-      // Detect double-click for maximize toggle
-      if (isDoubleClicked.current) {
-        if (win.isMaximized) {
-          restore(win.id);
-        } else {
-          maximize(win.id);
-        }
-        isDoubleClicked.current = false;
-      } else {
-        isDoubleClicked.current = true;
-        setTimeout(() => {
-          isDoubleClicked.current = false;
-        }, 300);
-      }
-
       drag.onPointerUp(e);
       windowSnap.stopSnapping();
     },
-    [win, drag, windowSnap, maximize, restore],
+    [drag, windowSnap],
+  );
+
+  const handleTitleBarDoubleClick = useCallback(() => {
+    if (win.isMaximized) {
+      restore(win.id);
+    } else {
+      maximize(win.id);
+    }
+  }, [win.id, win.isMaximized, maximize, restore]);
+
+  const handleTitleBarContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setTitleMenu({ x: e.clientX, y: e.clientY });
+    },
+    [],
+  );
+
+  const closeTitleMenu = useCallback(() => setTitleMenu(null), []);
+
+  const titleBarItems = getWindowTitleBarMenuItems(
+    win.id,
+    win.isMaximized,
+    win.isMinimized,
   );
 
   const handleResizePointerDown = useCallback(
@@ -174,6 +185,9 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
         onPointerDown={handleTitleBarPointerDown}
         onPointerMove={handleTitleBarPointerMove}
         onPointerUp={handleTitleBarPointerUp}
+        onDoubleClick={handleTitleBarDoubleClick}
+        onContextMenu={handleTitleBarContextMenu}
+        onClick={closeTitleMenu}
       >
         {/* App icon */}
         {win.icon && (
@@ -244,6 +258,16 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
           onPointerUp={resize.onPointerUp}
         />
       ))}
+
+      {/* Title bar context menu */}
+      {titleMenu && (
+        <ContextMenu
+          x={titleMenu.x}
+          y={titleMenu.y}
+          items={titleBarItems}
+          onClose={closeTitleMenu}
+        />
+      )}
     </div>
   );
 }

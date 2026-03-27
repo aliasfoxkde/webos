@@ -1,36 +1,23 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useKernel } from '@/hooks/use-kernel';
+import { getAppList } from './app-list';
 
 interface StartMenuProps {
   onClose: () => void;
 }
 
-const APP_LIST = [
-  { id: 'file-manager', name: 'File Manager', icon: '📁' },
-  { id: 'writer', name: 'Writer', icon: '📝' },
-  { id: 'calc', name: 'Calc', icon: '📊' },
-  { id: 'notes', name: 'Notes', icon: '📋' },
-  { id: 'draw', name: 'Draw', icon: '🎨' },
-  { id: 'impress', name: 'Impress', icon: '📽️' },
-  { id: 'terminal', name: 'Terminal', icon: '💻' },
-  { id: 'text-editor', name: 'Text Editor', icon: '📄' },
-  { id: 'calculator', name: 'Calculator', icon: '🔢' },
-  { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
-  { id: 'pdf-viewer', name: 'PDF Viewer', icon: '📕' },
-  { id: 'task-manager', name: 'Task Manager', icon: '📈' },
-  { id: 'settings', name: 'Settings', icon: '⚙️' },
-];
-
 export function StartMenu({ onClose }: StartMenuProps) {
   const [search, setSearch] = React.useState('');
+  const [showPower, setShowPower] = useState(false);
   const { launchApp } = useKernel();
   const menuRef = React.useRef<HTMLDivElement>(null);
+  const appList = useMemo(() => getAppList(), []);
 
   const filtered = search
-    ? APP_LIST.filter((app) =>
+    ? appList.filter((app) =>
         app.name.toLowerCase().includes(search.toLowerCase()),
       )
-    : APP_LIST;
+    : appList;
 
   const handleLaunch = (appId: string, name: string) => {
     launchApp(appId, name);
@@ -47,6 +34,14 @@ export function StartMenu({ onClose }: StartMenuProps) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
+
+  const handleSleep = () => {
+    onClose();
+  };
+
+  const handleRestart = () => {
+    window.location.reload();
+  };
 
   return (
     <div
@@ -66,7 +61,7 @@ export function StartMenu({ onClose }: StartMenuProps) {
       </div>
 
       {/* App List */}
-      <div className="max-h-80 overflow-y-auto p-1">
+      <div className="max-h-64 overflow-y-auto p-1">
         {filtered.map((app) => (
           <button
             key={app.id}
@@ -82,6 +77,56 @@ export function StartMenu({ onClose }: StartMenuProps) {
             No apps found
           </p>
         )}
+      </div>
+
+      {/* Footer: User + Power */}
+      <div
+        className="flex items-center justify-between px-3 py-2 border-t border-[var(--os-menu-border)]"
+      >
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-full text-xs"
+            style={{ backgroundColor: 'var(--os-accent)' }}
+          >
+            U
+          </div>
+          <span
+            className="text-xs font-medium"
+            style={{ color: 'var(--os-text-secondary)' }}
+          >
+            User
+          </span>
+        </div>
+
+        {/* Power button */}
+        <div className="relative">
+          <button
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors hover:bg-[var(--os-menu-hover)]"
+            style={{ color: 'var(--os-text-muted)' }}
+            onClick={() => setShowPower((s) => !s)}
+          >
+            <span>⏻</span>
+          </button>
+
+          {showPower && (
+            <div
+              className="absolute bottom-full right-0 mb-1 w-40 rounded-lg border border-[var(--os-menu-border)] bg-[var(--os-menu-bg)] shadow-[var(--os-shadow-lg)] overflow-hidden"
+            >
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[var(--os-text-primary)] hover:bg-[var(--os-menu-hover)] transition-colors"
+                onClick={handleSleep}
+              >
+                <span>😴</span> Sleep
+              </button>
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[var(--os-text-primary)] hover:bg-[var(--os-menu-hover)] transition-colors"
+                onClick={handleRestart}
+              >
+                <span>🔄</span> Restart
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -4,12 +4,13 @@ import { SystemTray } from './SystemTray';
 import { StartMenu } from './StartMenu';
 import { SearchBar } from './SearchBar';
 import { ContextMenu } from './ContextMenu';
-import { getTaskbarContextMenuItems } from './context-menu-items';
+import { getTaskbarContextMenuItems, getTaskbarWindowContextMenuItems } from './context-menu-items';
 import { useKernel } from '@/hooks/use-kernel';
 
 export function Taskbar() {
   const [showStartMenu, setShowStartMenu] = React.useState(false);
   const [taskbarMenu, setTaskbarMenu] = useState<{ x: number; y: number } | null>(null);
+  const [winMenu, setWinMenu] = useState<{ x: number; y: number; windowId: string; title: string; isMinimized: boolean } | null>(null);
   const windows = useWindowStore((s) => s.windows);
   const focusWindow = useWindowStore((s) => s.focus);
   const { launchApp } = useKernel();
@@ -45,6 +46,19 @@ export function Taskbar() {
     setTaskbarMenu(null);
   }, []);
 
+  const closeWinMenu = useCallback(() => {
+    setWinMenu(null);
+  }, []);
+
+  const handleWinContextMenu = useCallback(
+    (e: React.MouseEvent, windowId: string, title: string, isMinimized: boolean) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setWinMenu({ x: e.clientX, y: e.clientY, windowId, title, isMinimized });
+    },
+    [],
+  );
+
   const taskbarItems = getTaskbarContextMenuItems(
     () => launchApp('task-manager'),
     handleShowDesktop,
@@ -59,7 +73,10 @@ export function Taskbar() {
           borderTop: '1px solid var(--os-taskbar-border)',
         }}
         onContextMenu={handleTaskbarContextMenu}
-        onClick={closeTaskbarMenu}
+        onClick={() => {
+          closeTaskbarMenu();
+          closeWinMenu();
+        }}
       >
         {/* Start Button */}
         <button
@@ -115,6 +132,9 @@ export function Taskbar() {
                   : '2px solid transparent',
               }}
               onClick={() => handleTaskbarClick(win.id)}
+              onContextMenu={(e) =>
+                handleWinContextMenu(e, win.id, win.title, win.isMinimized)
+              }
               title={win.title}
             >
               {win.icon && <span>{win.icon}</span>}
@@ -122,6 +142,25 @@ export function Taskbar() {
             </button>
           ))}
         </div>
+
+        {/* Show Desktop Strip */}
+        <div
+          className="w-[6px] h-10 mx-1 shrink-0 rounded-sm cursor-pointer transition-colors"
+          style={{
+            borderLeft: '1px solid var(--os-taskbar-border)',
+          }}
+          onClick={(ev) => {
+            ev.stopPropagation();
+            handleShowDesktop();
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title="Show Desktop"
+        />
 
         {/* System Tray */}
         <SystemTray />
@@ -139,6 +178,20 @@ export function Taskbar() {
           y={taskbarMenu.y}
           items={taskbarItems}
           onClose={closeTaskbarMenu}
+        />
+      )}
+
+      {/* Window Button Context Menu */}
+      {winMenu && (
+        <ContextMenu
+          x={winMenu.x}
+          y={winMenu.y}
+          items={getTaskbarWindowContextMenuItems(
+            winMenu.windowId,
+            winMenu.title,
+            winMenu.isMinimized,
+          )}
+          onClose={closeWinMenu}
         />
       )}
     </>

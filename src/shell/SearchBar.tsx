@@ -1,21 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useKernel } from '@/hooks/use-kernel';
-
-const APP_LIST = [
-  { id: 'file-manager', name: 'File Manager', icon: '📁' },
-  { id: 'writer', name: 'Writer', icon: '📝' },
-  { id: 'calc', name: 'Calc', icon: '📊' },
-  { id: 'notes', name: 'Notes', icon: '📋' },
-  { id: 'draw', name: 'Draw', icon: '🎨' },
-  { id: 'impress', name: 'Impress', icon: '📽️' },
-  { id: 'terminal', name: 'Terminal', icon: '💻' },
-  { id: 'text-editor', name: 'Text Editor', icon: '📄' },
-  { id: 'calculator', name: 'Calculator', icon: '🔢' },
-  { id: 'image-viewer', name: 'Image Viewer', icon: '🖼️' },
-  { id: 'pdf-viewer', name: 'PDF Viewer', icon: '📕' },
-  { id: 'task-manager', name: 'Task Manager', icon: '📈' },
-  { id: 'settings', name: 'Settings', icon: '⚙️' },
-];
+import { getAppList } from './app-list';
 
 export function SearchBar() {
   const [query, setQuery] = useState('');
@@ -25,14 +10,16 @@ export function SearchBar() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { launchApp } = useKernel();
 
+  const appList = useMemo(() => getAppList(), []);
+
   const filtered = useMemo(
     () =>
       query
-        ? APP_LIST.filter((app) =>
+        ? appList.filter((app) =>
             app.name.toLowerCase().includes(query.toLowerCase()),
           )
         : [],
-    [query],
+    [query, appList],
   );
 
   const open = useCallback(() => {

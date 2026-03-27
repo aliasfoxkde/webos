@@ -11,7 +11,10 @@ test.describe('Deployed Site Check', () => {
     page.on('pageerror', (err) => errors.push(err.message));
 
     await page.goto('https://webos-aiv.pages.dev/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
+
+    // Wait for boot screen to finish (taskbar or start button appears)
+    const taskbar = page.locator('.fixed.bottom-0.h-12');
+    await taskbar.waitFor({ timeout: 15000 }).catch(() => {});
 
     // Check for any JS errors
     console.log('Console errors:', JSON.stringify(errors, null, 2));
@@ -28,7 +31,6 @@ test.describe('Deployed Site Check', () => {
     console.log('Desktop visible:', desktopVisible);
 
     // Check if taskbar is visible
-    const taskbar = page.locator('.fixed.bottom-0.h-12');
     const taskbarVisible = await taskbar.isVisible().catch(() => false);
     console.log('Taskbar visible:', taskbarVisible);
 
@@ -48,7 +50,10 @@ test.describe('Deployed Site Check', () => {
 
   test('try clicking start button', async ({ page }) => {
     await page.goto('https://webos-aiv.pages.dev/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(2000);
+
+    // Wait for boot screen to finish
+    const taskbar = page.locator('.fixed.bottom-0.h-12');
+    await taskbar.waitFor({ timeout: 15000 }).catch(() => {});
 
     const startBtn = page.locator('button', { hasText: 'Start' });
     const startBtnVisible = await startBtn.isVisible().catch(() => false);

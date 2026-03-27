@@ -3,7 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Deployed App Launch', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('https://webos-aiv.pages.dev/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Wait for boot screen to finish (taskbar appears)
+    await page.locator('.fixed.bottom-0.h-12').waitFor({ timeout: 15000 });
   });
 
   async function launchAppFromMenu(page: import('@playwright/test').Page, appName: string) {
@@ -16,6 +17,7 @@ test.describe('Deployed App Launch', () => {
 
   test('double-click File Manager icon', async ({ page }) => {
     const icon = page.locator('.fixed.inset-0 button', { hasText: 'File Manager' });
+    await icon.waitFor({ timeout: 10000 });
     await icon.dblclick();
     const windowEl = page.locator('.rounded-lg.shadow-xl.border').first();
     await expect(windowEl).toBeVisible({ timeout: 10000 });
@@ -45,6 +47,7 @@ test.describe('Deployed App Launch', () => {
 
   test('close a window', async ({ page }) => {
     const icon = page.locator('.fixed.inset-0 button', { hasText: 'Terminal' });
+    await icon.waitFor({ timeout: 10000 });
     await icon.dblclick();
     const windowEl = page.locator('.rounded-lg.shadow-xl.border').first();
     await expect(windowEl).toBeVisible({ timeout: 10000 });

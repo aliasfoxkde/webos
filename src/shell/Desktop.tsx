@@ -5,28 +5,15 @@ import { getDesktopContextMenuItems } from './context-menu-items';
 import { useKernel } from '@/hooks/use-kernel';
 import { getWallpaper, getSavedWallpaperId, cycleWallpaper } from './wallpapers';
 import { mkdir, writeFile } from '@/vfs/vfs';
-
-interface DesktopShortcut {
-  name: string;
-  icon?: string;
-  appId: string;
-}
-
-const DEFAULT_SHORTCUTS: DesktopShortcut[] = [
-  { name: 'File Manager', icon: '📁', appId: 'file-manager' },
-  { name: 'Writer', icon: '📝', appId: 'writer' },
-  { name: 'Calc', icon: '📊', appId: 'calc' },
-  { name: 'Notes', icon: '📋', appId: 'notes' },
-  { name: 'Draw', icon: '🎨', appId: 'draw' },
-  { name: 'Impress', icon: '📽️', appId: 'impress' },
-  { name: 'Terminal', icon: '💻', appId: 'terminal' },
-  { name: 'Settings', icon: '⚙️', appId: 'settings' },
-];
+import { getAppList } from './app-list';
 
 export function Desktop() {
   const { launchApp } = useKernel();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [wallpaper, setWallpaper] = useState(() => getWallpaper(getSavedWallpaperId()));
+
+  // Desktop shortcuts: show first 8 registered apps
+  const shortcuts = React.useMemo(() => getAppList().slice(0, 8), []);
 
   // Listen for wallpaper changes from Settings app
   useEffect(() => {
@@ -83,12 +70,12 @@ export function Desktop() {
     >
       {/* Desktop Icons Grid */}
       <div className="p-4 flex flex-col flex-wrap gap-1 h-[calc(100vh-48px)] content-start">
-        {DEFAULT_SHORTCUTS.map((shortcut) => (
+        {shortcuts.map((shortcut) => (
           <DesktopIcon
-            key={shortcut.appId}
+            key={shortcut.id}
             name={shortcut.name}
             icon={shortcut.icon}
-            onDoubleClick={() => handleDoubleClick(shortcut.appId)}
+            onDoubleClick={() => handleDoubleClick(shortcut.id)}
           />
         ))}
       </div>

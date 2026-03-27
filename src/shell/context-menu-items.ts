@@ -1,4 +1,40 @@
 import type { ContextMenuItem } from './ContextMenu';
+import { useWindowStore } from '@/wm/window-store';
+
+export function getWindowTitleBarMenuItems(
+  windowId: string,
+  isMaximized: boolean,
+  isMinimized: boolean,
+): ContextMenuItem[] {
+  const store = useWindowStore.getState();
+  return [
+    {
+      label: 'Restore',
+      icon: '🔲',
+      onClick: () => (isMaximized || isMinimized ? store.restore(windowId) : undefined),
+      disabled: !isMaximized && !isMinimized,
+    },
+    {
+      label: 'Minimize',
+      icon: '➖',
+      onClick: () => store.minimize(windowId),
+      disabled: isMinimized,
+    },
+    {
+      label: isMaximized ? 'Restore Down' : 'Maximize',
+      icon: isMaximized ? '🔲' : '⛶',
+      shortcut: '⊞+↑',
+      onClick: () => (isMaximized ? store.restore(windowId) : store.maximize(windowId)),
+    },
+    { label: '', separator: true, onClick: () => {} },
+    {
+      label: 'Close',
+      icon: '✕',
+      shortcut: 'Alt+F4',
+      onClick: () => store.close(windowId),
+    },
+  ];
+}
 
 export function getDesktopContextMenuItems(
   onNewFolder: () => void,
@@ -31,5 +67,31 @@ export function getTaskbarContextMenuItems(
     { label: 'Show Desktop', icon: '🖥️', shortcut: 'Win+D', onClick: onShowDesktop },
     { label: '', separator: true, onClick: () => {} },
     { label: 'Properties', icon: '📋', onClick: () => {} },
+  ];
+}
+
+export function getTaskbarWindowContextMenuItems(
+  windowId: string,
+  _title: string,
+  isMinimized: boolean,
+): ContextMenuItem[] {
+  const store = useWindowStore.getState();
+  return [
+    {
+      label: isMinimized ? 'Restore' : 'Minimize',
+      icon: isMinimized ? '🔲' : '➖',
+      onClick: () => (isMinimized ? store.restore(windowId) : store.minimize(windowId)),
+    },
+    {
+      label: 'Maximize',
+      icon: '⛶',
+      onClick: () => store.maximize(windowId),
+    },
+    { label: '', separator: true, onClick: () => {} },
+    {
+      label: 'Close',
+      icon: '✕',
+      onClick: () => store.close(windowId),
+    },
   ];
 }

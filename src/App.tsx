@@ -5,7 +5,8 @@ import { Taskbar } from '@/shell/Taskbar';
 import { WindowContainer } from '@/wm/WindowContainer';
 import { ThemeProvider } from '@/themes/theme-context';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { LoadingScreen } from '@/ui/LoadingScreen';
+import { NotificationContainer } from '@/shell/notifications';
+import { LoadingScreen, BootScreen } from '@/ui/LoadingScreen';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('app');
@@ -82,18 +83,7 @@ function AppContent() {
   const booted = useKernelStore((s) => s.booted);
 
   if (!booted) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[var(--os-desktop-bg)]">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold" style={{ color: 'var(--os-accent-light)' }}>
-            WebOS
-          </h1>
-          <p className="mt-2" style={{ color: 'var(--os-text-secondary)' }}>
-            Loading...
-          </p>
-        </div>
-      </div>
-    );
+    return <BootScreen />;
   }
 
   return (
@@ -101,6 +91,7 @@ function AppContent() {
       <Desktop />
       <WindowContainer renderContent={renderAppContent} />
       <Taskbar />
+      <NotificationContainer />
     </div>
   );
 }
