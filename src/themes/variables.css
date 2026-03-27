@@ -1,0 +1,150 @@
+:root {
+  /* Background colors */
+  --os-bg-primary: #0f172a;
+  --os-bg-secondary: #1e293b;
+  --os-bg-tertiary: #334155;
+  --os-bg-hover: #475569;
+  --os-bg-active: #64748b;
+
+  /* Text colors */
+  --os-text-primary: #f1f5f9;
+  --os-text-secondary: #94a3b8;
+  --os-text-muted: #64748b;
+  --os-text-inverse: #0f172a;
+
+  /* Accent colors */
+  --os-accent: #3b82f6;
+  --os-accent-hover: #2563eb;
+  --os-accent-light: #60a5fa;
+  --os-accent-muted: #1e3a5f;
+
+  /* Window */
+  --os-window-bg: #1e293b;
+  --os-window-titlebar: #0f172a;
+  --os-window-border: #334155;
+  --os-window-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Taskbar */
+  --os-taskbar-bg: rgba(15, 23, 42, 0.9);
+  --os-taskbar-border: rgba(51, 65, 85, 0.5);
+
+  /* Desktop */
+  --os-desktop-bg: #0f172a;
+
+  /* Context menu */
+  --os-menu-bg: #1e293b;
+  --os-menu-border: #334155;
+  --os-menu-hover: #334155;
+
+  /* Status colors */
+  --os-success: #22c55e;
+  --os-warning: #f59e0b;
+  --os-error: #ef4444;
+  --os-info: #3b82f6;
+
+  /* Borders */
+  --os-border: #334155;
+  --os-border-focus: #3b82f6;
+
+  /* Shadows */
+  --os-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --os-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --os-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --os-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+
+  /* Spacing */
+  --os-radius-sm: 4px;
+  --os-radius-md: 8px;
+  --os-radius-lg: 12px;
+  --os-radius-xl: 16px;
+
+  /* Font */
+  --os-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --os-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Animation */
+  --os-transition-fast: 100ms ease;
+  --os-transition-normal: 200ms ease;
+  --os-transition-slow: 300ms ease;
+}
+
+/* Light theme */
+[data-theme='light'] {
+  --os-bg-primary: #f8fafc;
+  --os-bg-secondary: #ffffff;
+  --os-bg-tertiary: #e2e8f0;
+  --os-bg-hover: #cbd5e1;
+  --os-bg-active: #94a3b8;
+
+  --os-text-primary: #0f172a;
+  --os-text-secondary: #475569;
+  --os-text-muted: #94a3b8;
+  --os-text-inverse: #f1f5f9;
+
+  --os-accent: #2563eb;
+  --os-accent-hover: #1d4ed8;
+  --os-accent-light: #3b82f6;
+  --os-accent-muted: #dbeafe;
+
+  --os-window-bg: #ffffff;
+  --os-window-titlebar: #f1f5f9;
+  --os-window-border: #e2e8f0;
+  --os-window-shadow: rgba(0, 0, 0, 0.1);
+
+  --os-taskbar-bg: rgba(248, 250, 252, 0.9);
+  --os-taskbar-border: rgba(226, 232, 240, 0.8);
+
+  --os-desktop-bg: #e2e8f0;
+
+  --os-menu-bg: #ffffff;
+  --os-menu-border: #e2e8f0;
+  --os-menu-hover: #f1f5f9;
+
+  --os-border: #e2e8f0;
+  --os-border-focus: #2563eb;
+
+  --os-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --os-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --os-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --os-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* High contrast theme */
+[data-theme='high-contrast'] {
+  --os-bg-primary: #000000;
+  --os-bg-secondary: #1a1a1a;
+  --os-bg-tertiary: #333333;
+  --os-bg-hover: #555555;
+  --os-bg-active: #777777;
+
+  --os-text-primary: #ffffff;
+  --os-text-secondary: #cccccc;
+  --os-text-muted: #999999;
+  --os-text-inverse: #000000;
+
+  --os-accent: #ffdd00;
+  --os-accent-hover: #ffcc00;
+  --os-accent-light: #ffee66;
+  --os-accent-muted: #554400;
+
+  --os-window-bg: #1a1a1a;
+  --os-window-titlebar: #000000;
+  --os-window-border: #ffffff;
+  --os-window-shadow: rgba(255, 255, 255, 0.2);
+
+  --os-taskbar-bg: rgba(0, 0, 0, 0.95);
+  --os-taskbar-border: rgba(255, 255, 255, 0.5);
+
+  --os-desktop-bg: #000000;
+
+  --os-menu-bg: #1a1a1a;
+  --os-menu-border: #ffffff;
+  --os-menu-hover: #333333;
+
+  --os-border: #ffffff;
+  --os-border-focus: #ffdd00;
+
+  --os-success: #00ff00;
+  --os-warning: #ffff00;
+  --os-error: #ff0000;
+}
