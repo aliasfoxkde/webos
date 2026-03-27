@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect } from 'react';
 import { useKernelStore } from '@/stores/kernel-store';
 import { Desktop } from '@/shell/Desktop';
@@ -5,6 +6,7 @@ import { Taskbar } from '@/shell/Taskbar';
 import { WindowContainer } from '@/wm/WindowContainer';
 import { ThemeProvider } from '@/themes/theme-context';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { FileManager } from '@/apps/file-manager';
 
 function AppContent() {
   const boot = useKernelStore((s) => s.boot);
@@ -34,11 +36,18 @@ function AppContent() {
   return (
     <div className="h-screen w-screen overflow-hidden">
       <Desktop />
-      <WindowContainer renderContent={(windowId, appId) => (
-        <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
-          <p>{appId} — content placeholder</p>
-        </div>
-      )} />
+      <WindowContainer renderContent={(_windowId, appId) => {
+        switch (appId) {
+          case 'file-manager':
+            return <FileManager />;
+          default:
+            return (
+              <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
+                <p>{appId} — content placeholder</p>
+              </div>
+            );
+        }
+      }} />
       <Taskbar />
     </div>
   );
