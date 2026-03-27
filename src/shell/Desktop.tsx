@@ -1,8 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { DesktopIcon } from './DesktopIcon';
 import { ContextMenu } from './ContextMenu';
 import { getDesktopContextMenuItems } from './context-menu-items';
 import { useKernel } from '@/hooks/use-kernel';
+import { getWallpaper, getSavedWallpaperId, cycleWallpaper } from './wallpapers';
+import { mkdir, writeFile } from '@/vfs/vfs';
 
 interface DesktopShortcut {
   name: string;
@@ -24,6 +26,17 @@ const DEFAULT_SHORTCUTS: DesktopShortcut[] = [
 export function Desktop() {
   const { launchApp } = useKernel();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [wallpaper, setWallpaper] = useState(() => getWallpaper(getSavedWallpaperId()));
+
+  // Listen for wallpaper changes from Settings app
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      setWallpaper(getWallpaper(id));
+    };
+    window.addEventListener('webos:wallpaper-change', handler);
+    return () => window.removeEventListener('webos:wallpaper-change', handler);
+  }, []);
 
   const handleDoubleClick = (appId: string) => {
     launchApp(appId);
@@ -39,24 +52,32 @@ export function Desktop() {
   }, []);
 
   const contextItems = getDesktopContextMenuItems(
-    () => {
-      // New folder - could open a dialog
+    async () => {
+      try { await mkdir('/home/Desktop/New Folder'); } catch { /* exists */ }
+    },
+    async () => {
+      try { await writeFile('/home/Desktop/Untitled.txt', ''); } catch { /* fail */ }
     },
     () => {
-      // New text file
+      // Refresh desktop
+      window.location.reload();
     },
     () => {
-      // Refresh - no-op for now
+      const next = cycleWallpaper();
+      setWallpaper(next);
     },
-    () => launchApp('settings'),
     () => {
-      // About
+      launchApp('settings');
+    },
+    () => {
+      launchApp('settings');
     },
   );
 
   return (
     <div
-      className="fixed inset-0 bg-[var(--os-desktop-bg)] overflow-hidden"
+      className="fixed inset-0 overflow-hidden transition-all duration-500"
+      style={wallpaper.style}
       onContextMenu={handleContextMenu}
       onClick={closeContextMenu}
     >

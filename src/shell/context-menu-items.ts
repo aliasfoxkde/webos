@@ -4,7 +4,8 @@ export function getDesktopContextMenuItems(
   onNewFolder: () => void,
   onNewFile: () => void,
   onRefresh: () => void,
-  onSettings: () => void,
+  onChangeWallpaper: () => void,
+  onDisplaySettings: () => void,
   onAbout: () => void,
 ): ContextMenuItem[] {
   return [
@@ -13,7 +14,22 @@ export function getDesktopContextMenuItems(
     { label: '', separator: true, onClick: () => {} },
     { label: 'Refresh', icon: '🔄', shortcut: 'F5', onClick: onRefresh },
     { label: '', separator: true, onClick: () => {} },
-    { label: 'Settings', icon: '⚙️', onClick: onSettings },
+    { label: 'Change Wallpaper', icon: '🖼️', onClick: onChangeWallpaper },
+    { label: 'Display Settings', icon: '🖥️', onClick: onDisplaySettings },
+    { label: '', separator: true, onClick: () => {} },
+    { label: 'Settings', icon: '⚙️', onClick: onDisplaySettings },
     { label: 'About WebOS', icon: 'ℹ️', onClick: onAbout },
+  ];
+}
+
+export function getTaskbarContextMenuItems(
+  onTaskManager: () => void,
+  onShowDesktop: () => void,
+): ContextMenuItem[] {
+  return [
+    { label: 'Task Manager', icon: '📈', onClick: onTaskManager },
+    { label: 'Show Desktop', icon: '🖥️', shortcut: 'Win+D', onClick: onShowDesktop },
+    { label: '', separator: true, onClick: () => {} },
+    { label: 'Properties', icon: '📋', onClick: () => {} },
   ];
 }

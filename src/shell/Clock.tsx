@@ -8,13 +8,29 @@ export function Clock() {
     return () => clearInterval(timer);
   }, []);
 
-  const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dateStr = time.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const timeStr = time.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const dateStr = time.toLocaleDateString([], {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
-    <div className="text-xs text-[var(--os-text-secondary)] text-right leading-tight">
+    <div
+      className="text-xs text-right leading-tight pl-2"
+      style={{
+        color: 'var(--os-text-secondary)',
+        borderLeft: '1px solid var(--os-taskbar-border)',
+      }}
+    >
       <div>{timeStr}</div>
-      <div>{dateStr}</div>
+      <div className="text-[10px]" style={{ color: 'var(--os-text-muted)' }}>
+        {dateStr}
+      </div>
     </div>
   );
 }

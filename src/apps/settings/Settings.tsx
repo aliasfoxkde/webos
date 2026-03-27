@@ -2,17 +2,24 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/themes/theme-context';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSyncStatus, fullSync, processSyncQueue, clearSyncState } from '@/vfs/sync-r2';
+import {
+  getAllWallpapers,
+  getSavedWallpaperId,
+  saveWallpaperId,
+} from '@/shell/wallpapers';
 
-type SettingsTab = 'theme' | 'sync' | 'about';
+type SettingsTab = 'appearance' | 'sync' | 'about';
 
 const TABS: { id: SettingsTab; label: string }[] = [
-  { id: 'theme', label: 'Theme' },
+  { id: 'appearance', label: 'Appearance' },
   { id: 'sync', label: 'Cloud Sync' },
   { id: 'about', label: 'About' },
 ];
 
 export function Settings() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('theme');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
+  const [wallpaperId, setWallpaperId] = useState(getSavedWallpaperId);
+  const allWallpapers = getAllWallpapers();
   const { currentTheme, themes, setTheme } = useTheme();
   const { isAuthenticated, userId, username, token, login, logout, isLoading } = useAuthStore();
   const [syncStatus, setSyncStatus] = useState({ lastSyncAt: 0, queueLength: 0 });
@@ -90,110 +97,174 @@ export function Settings() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === 'theme' && (
-          <div className="space-y-6">
+        {activeTab === 'appearance' && (
+          <div className="space-y-8">
+            {/* Theme Section */}
             <div>
               <h3
                 className="mb-1 text-sm font-semibold"
                 style={{ color: 'var(--os-text-primary)' }}
               >
-                Appearance
+                Theme
               </h3>
               <p
-                className="text-xs"
+                className="text-xs mb-4"
                 style={{ color: 'var(--os-text-muted)' }}
               >
-                Choose a theme for WebOS. Changes apply immediately.
+                Choose a color theme. Changes apply immediately.
               </p>
-            </div>
 
-            <div className="flex flex-wrap gap-3">
-              {themes.map((theme) => {
-                const isSelected = theme.id === currentTheme.id;
-                return (
-                  <button
-                    key={theme.id}
-                    onClick={() => setTheme(theme)}
-                    className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors"
-                    style={{
-                      borderColor: isSelected
-                        ? 'var(--os-accent)'
-                        : 'var(--os-border)',
-                      backgroundColor: isSelected
-                        ? 'var(--os-accent-muted)'
-                        : 'var(--os-bg-secondary)',
-                      minWidth: '120px',
-                    }}
-                  >
-                    {/* Theme preview swatch */}
-                    <div
-                      className="h-16 w-16 rounded-lg border"
+              <div className="flex flex-wrap gap-3">
+                {themes.map((theme) => {
+                  const isSelected = theme.id === currentTheme.id;
+                  return (
+                    <button
+                      key={theme.id}
+                      onClick={() => setTheme(theme)}
+                      className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors"
                       style={{
-                        borderColor: 'var(--os-border)',
-                        backgroundColor:
-                          theme.id === 'dark'
-                            ? '#0f172a'
-                            : theme.id === 'light'
-                              ? '#f8fafc'
-                              : '#000000',
-                        boxShadow: 'var(--os-shadow-sm)',
+                        borderColor: isSelected
+                          ? 'var(--os-accent)'
+                          : 'var(--os-border)',
+                        backgroundColor: isSelected
+                          ? 'var(--os-accent-muted)'
+                          : 'var(--os-bg-secondary)',
+                        minWidth: '120px',
                       }}
                     >
                       <div
-                        className="h-4 rounded-t-lg"
+                        className="h-16 w-16 rounded-lg border"
                         style={{
+                          borderColor: 'var(--os-border)',
                           backgroundColor:
                             theme.id === 'dark'
-                              ? '#1e293b'
+                              ? '#0f172a'
                               : theme.id === 'light'
-                                ? '#ffffff'
-                                : '#1a1a1a',
+                                ? '#f8fafc'
+                                : '#000000',
+                          boxShadow: 'var(--os-shadow-sm)',
                         }}
-                      />
-                      <div className="flex gap-1 p-1">
+                      >
                         <div
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{
-                            backgroundColor:
-                              theme.id === 'high-contrast'
-                                ? '#ffdd00'
-                                : 'var(--os-accent)',
-                          }}
-                        />
-                        <div
-                          className="h-1.5 w-3 rounded"
+                          className="h-4 rounded-t-lg"
                           style={{
                             backgroundColor:
                               theme.id === 'dark'
-                                ? '#334155'
+                                ? '#1e293b'
                                 : theme.id === 'light'
-                                  ? '#e2e8f0'
-                                  : '#333333',
+                                  ? '#ffffff'
+                                  : '#1a1a1a',
                           }}
                         />
+                        <div className="flex gap-1 p-1">
+                          <div
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{
+                              backgroundColor:
+                                theme.id === 'high-contrast'
+                                  ? '#ffdd00'
+                                  : 'var(--os-accent)',
+                            }}
+                          />
+                          <div
+                            className="h-1.5 w-3 rounded"
+                            style={{
+                              backgroundColor:
+                                theme.id === 'dark'
+                                  ? '#334155'
+                                  : theme.id === 'light'
+                                    ? '#e2e8f0'
+                                    : '#333333',
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <span
-                      className="text-xs font-medium"
+                      <span
+                        className="text-xs font-medium"
+                        style={{
+                          color: isSelected
+                            ? 'var(--os-text-primary)'
+                            : 'var(--os-text-secondary)',
+                        }}
+                      >
+                        {theme.name}
+                      </span>
+                      {isSelected && (
+                        <span
+                          className="text-[10px] font-semibold uppercase tracking-wider"
+                          style={{ color: 'var(--os-accent)' }}
+                        >
+                          Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Wallpaper Section */}
+            <div>
+              <h3
+                className="mb-1 text-sm font-semibold"
+                style={{ color: 'var(--os-text-primary)' }}
+              >
+                Wallpaper
+              </h3>
+              <p
+                className="text-xs mb-4"
+                style={{ color: 'var(--os-text-muted)' }}
+              >
+                Choose a desktop wallpaper. Your selection is saved automatically.
+              </p>
+
+              <div className="grid grid-cols-4 gap-3">
+                {allWallpapers.map((wp) => {
+                  const isSelected = wp.id === wallpaperId;
+                  return (
+                    <button
+                      key={wp.id}
+                      onClick={() => {
+                        saveWallpaperId(wp.id);
+                        setWallpaperId(wp.id);
+                        // Dispatch a custom event so Desktop picks up the change
+                        window.dispatchEvent(
+                          new CustomEvent('webos:wallpaper-change', {
+                            detail: wp.id,
+                          }),
+                        );
+                      }}
+                      className="flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors"
                       style={{
-                        color: isSelected
-                          ? 'var(--os-text-primary)'
-                          : 'var(--os-text-secondary)',
+                        borderColor: isSelected
+                          ? 'var(--os-accent)'
+                          : 'var(--os-border)',
+                        backgroundColor: isSelected
+                          ? 'var(--os-accent-muted)'
+                          : 'var(--os-bg-secondary)',
                       }}
                     >
-                      {theme.name}
-                    </span>
-                    {isSelected && (
+                      <div
+                        className="h-14 w-20 rounded-md"
+                        style={{
+                          ...wp.style,
+                          boxShadow: 'var(--os-shadow-sm)',
+                        }}
+                      />
                       <span
-                        className="text-[10px] font-semibold uppercase tracking-wider"
-                        style={{ color: 'var(--os-accent)' }}
+                        className="text-[10px] font-medium"
+                        style={{
+                          color: isSelected
+                            ? 'var(--os-text-primary)'
+                            : 'var(--os-text-secondary)',
+                        }}
                       >
-                        Active
+                        {wp.name}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

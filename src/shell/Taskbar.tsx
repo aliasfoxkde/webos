@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useWindowStore } from '@/wm/window-store';
 import { SystemTray } from './SystemTray';
 import { StartMenu } from './StartMenu';
+import { SearchBar } from './SearchBar';
+import { ContextMenu } from './ContextMenu';
+import { getTaskbarContextMenuItems } from './context-menu-items';
 import { useKernel } from '@/hooks/use-kernel';
 
 export function Taskbar() {
   const [showStartMenu, setShowStartMenu] = React.useState(false);
+  const [taskbarMenu, setTaskbarMenu] = useState<{ x: number; y: number } | null>(null);
   const windows = useWindowStore((s) => s.windows);
   const focusWindow = useWindowStore((s) => s.focus);
-  const { apps: _apps } = useKernel();
+  const { launchApp } = useKernel();
 
   const handleTaskbarClick = (windowId: string) => {
     const win = useWindowStore.getState().get(windowId);
@@ -23,41 +27,93 @@ export function Taskbar() {
     }
   };
 
-  const toggleStartMenu = () => {
-    setShowStartMenu((s) => !s);
-  };
+  const handleShowDesktop = useCallback(() => {
+    const allWindows = useWindowStore.getState().getAll();
+    for (const w of allWindows) {
+      if (!w.isMinimized) {
+        useWindowStore.getState().minimize(w.id);
+      }
+    }
+  }, []);
+
+  const handleTaskbarContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setTaskbarMenu({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const closeTaskbarMenu = useCallback(() => {
+    setTaskbarMenu(null);
+  }, []);
+
+  const taskbarItems = getTaskbarContextMenuItems(
+    () => launchApp('task-manager'),
+    handleShowDesktop,
+  );
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 h-12 bg-[var(--os-taskbar-bg)] border-t border-[var(--os-taskbar-border)] flex items-center px-2 gap-1 backdrop-blur-md z-[9999]">
+      <div
+        className="fixed bottom-0 left-0 right-0 h-12 flex items-center px-2 gap-1 backdrop-blur-md z-[9999]"
+        style={{
+          backgroundColor: 'var(--os-taskbar-bg)',
+          borderTop: '1px solid var(--os-taskbar-border)',
+        }}
+        onContextMenu={handleTaskbarContextMenu}
+        onClick={closeTaskbarMenu}
+      >
         {/* Start Button */}
         <button
-          className={`h-8 px-3 rounded-md text-sm font-medium transition-colors ${
-            showStartMenu
-              ? 'bg-[var(--os-accent)] text-white'
-              : 'hover:bg-[var(--os-bg-tertiary)] text-[var(--os-text-primary)]'
-          }`}
-          onClick={toggleStartMenu}
+          className="h-8 px-3 rounded-md text-sm font-medium transition-colors shrink-0"
+          style={{
+            backgroundColor: showStartMenu
+              ? 'var(--os-accent)'
+              : 'transparent',
+            color: showStartMenu
+              ? 'white'
+              : 'var(--os-text-primary)',
+          }}
+          onClick={() => setShowStartMenu((s) => !s)}
         >
           <span className="text-lg mr-1">⊞</span>
           Start
         </button>
 
         {/* Separator */}
-        <div className="w-px h-6 bg-[var(--os-taskbar-border)] mx-1" />
+        <div
+          className="w-px h-6 mx-1 shrink-0"
+          style={{ backgroundColor: 'var(--os-taskbar-border)' }}
+        />
+
+        {/* Search Bar */}
+        <div className="shrink-0">
+          <SearchBar />
+        </div>
+
+        {/* Separator */}
+        <div
+          className="w-px h-6 mx-1 shrink-0"
+          style={{ backgroundColor: 'var(--os-taskbar-border)' }}
+        />
 
         {/* Running Windows */}
-        <div className="flex-1 flex items-center gap-1 overflow-x-auto">
+        <div className="flex-1 flex items-center gap-1 overflow-x-auto min-w-0">
           {windows.map((win) => (
             <button
               key={win.id}
-              className={`h-8 px-3 rounded-md text-xs max-w-[180px] truncate transition-colors flex items-center gap-1.5 ${
-                win.isActive
-                  ? 'bg-[var(--os-bg-tertiary)] text-[var(--os-text-primary)] border-b-2 border-[var(--os-accent)]'
+              className="h-8 px-3 rounded-md text-xs max-w-[180px] truncate transition-colors flex items-center gap-1.5 shrink-0"
+              style={{
+                backgroundColor: win.isActive
+                  ? 'var(--os-bg-tertiary)'
+                  : 'transparent',
+                color: win.isActive
+                  ? 'var(--os-text-primary)'
                   : win.isMinimized
-                    ? 'text-[var(--os-text-muted)] hover:bg-[var(--os-bg-hover)]'
-                    : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
-              }`}
+                    ? 'var(--os-text-muted)'
+                    : 'var(--os-text-secondary)',
+                borderBottom: win.isActive
+                  ? '2px solid var(--os-accent)'
+                  : '2px solid transparent',
+              }}
               onClick={() => handleTaskbarClick(win.id)}
               title={win.title}
             >
@@ -74,6 +130,16 @@ export function Taskbar() {
       {/* Start Menu */}
       {showStartMenu && (
         <StartMenu onClose={() => setShowStartMenu(false)} />
+      )}
+
+      {/* Taskbar Context Menu */}
+      {taskbarMenu && (
+        <ContextMenu
+          x={taskbarMenu.x}
+          y={taskbarMenu.y}
+          items={taskbarItems}
+          onClose={closeTaskbarMenu}
+        />
       )}
     </>
   );
