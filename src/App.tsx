@@ -7,6 +7,7 @@ import { WindowContainer } from '@/wm/WindowContainer';
 import { ThemeProvider } from '@/themes/theme-context';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FileManager } from '@/apps/file-manager';
+import { Writer } from '@/apps/writer';
 
 function AppContent() {
   const boot = useKernelStore((s) => s.boot);
@@ -40,6 +41,8 @@ function AppContent() {
         switch (appId) {
           case 'file-manager':
             return <FileManager />;
+          case 'writer':
+            return <Writer />;
           default:
             return (
               <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
