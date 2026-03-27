@@ -43,12 +43,14 @@ export function getDesktopContextMenuItems(
   onChangeWallpaper: () => void,
   onDisplaySettings: () => void,
   onAbout: () => void,
+  onSortIcons?: () => void,
 ): ContextMenuItem[] {
   return [
     { label: 'New Folder', icon: '📁', onClick: onNewFolder },
     { label: 'New Text File', icon: '📄', onClick: onNewFile },
     { label: '', separator: true, onClick: () => {} },
     { label: 'Refresh', icon: '🔄', shortcut: 'F5', onClick: onRefresh },
+    { label: 'Sort Icons', icon: '📊', onClick: onSortIcons ?? (() => {}) },
     { label: '', separator: true, onClick: () => {} },
     { label: 'Change Wallpaper', icon: '🖼️', onClick: onChangeWallpaper },
     { label: 'Display Settings', icon: '🖥️', onClick: onDisplaySettings },

@@ -69,7 +69,9 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       maxBounds: config.maxBounds,
       zIndex,
       isMinimized: false,
+      isMinimizing: false,
       isMaximized: false,
+      isRestoring: false,
       snap: 'none' as SnapPosition,
       isActive: true,
     };
@@ -127,22 +129,30 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   },
 
   minimize(windowId) {
+    // Start minimize animation
     set((state) => {
       const remaining = state.windows.filter((w) => w.id !== windowId && !w.isMinimized);
       const topWindow = remaining.sort((a, b) => b.zIndex - a.zIndex)[0];
       return {
         windows: state.windows.map((w) =>
           w.id === windowId
-            ? { ...w, isMinimized: true, isActive: false }
+            ? { ...w, isMinimizing: true, isActive: false }
             : { ...w, isActive: topWindow ? w.id === topWindow.id : false },
         ),
       };
     });
 
-    const window = get().get(windowId);
-    if (window) {
+    // After animation completes, hide the window
+    setTimeout(() => {
+      set((state) => ({
+        windows: state.windows.map((w) =>
+          w.id === windowId
+            ? { ...w, isMinimized: true, isMinimizing: false }
+            : w,
+        ),
+      }));
       eventBus.emit('window:minimize', { windowId });
-    }
+    }, 200);
   },
 
   restore(windowId) {
@@ -152,12 +162,14 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const zIndex = getNextZIndex();
     const bounds = window.prevBounds ?? window.bounds;
 
+    // Start restore animation (show window in minimized state first)
     set((state) => ({
       windows: state.windows.map((w) =>
         w.id === windowId
           ? {
               ...w,
               isMinimized: false,
+              isRestoring: true,
               isMaximized: false,
               snap: 'none' as SnapPosition,
               bounds,
@@ -169,6 +181,15 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       ),
       zIndexCounter: zIndex,
     }));
+
+    // Clear restoring flag after animation
+    setTimeout(() => {
+      set((state) => ({
+        windows: state.windows.map((w) =>
+          w.id === windowId ? { ...w, isRestoring: false } : w,
+        ),
+      }));
+    }, 200);
 
     eventBus.emit('window:restore', { windowId });
   },

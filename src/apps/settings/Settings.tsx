@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/themes/theme-context';
 import { useAuthStore } from '@/stores/auth-store';
+import { useScreensaverStore, type ScreensaverType } from '@/stores/screensaver-store';
 import { getSyncStatus, fullSync, processSyncQueue, clearSyncState } from '@/vfs/sync-r2';
 import {
   getAllWallpapers,
@@ -8,12 +9,23 @@ import {
   saveWallpaperId,
 } from '@/shell/wallpapers';
 
-type SettingsTab = 'appearance' | 'sync' | 'about';
+type SettingsTab = 'appearance' | 'screensaver' | 'sync' | 'about';
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'appearance', label: 'Appearance' },
+  { id: 'screensaver', label: 'Screensaver' },
   { id: 'sync', label: 'Cloud Sync' },
   { id: 'about', label: 'About' },
+];
+
+const SCREENSAVER_TYPES: { id: ScreensaverType; label: string }[] = [
+  { id: 'bubbles', label: 'Bubbles' },
+  { id: 'stars', label: 'Starfield' },
+  { id: 'matrix', label: 'Matrix' },
+  { id: 'particles', label: 'Particles' },
+  { id: 'waves', label: 'Waves' },
+  { id: 'fireworks', label: 'Fireworks' },
+  { id: 'neural', label: 'Neural Network' },
 ];
 
 export function Settings() {
@@ -22,6 +34,14 @@ export function Settings() {
   const allWallpapers = getAllWallpapers();
   const { currentTheme, themes, setTheme } = useTheme();
   const { isAuthenticated, userId, username, token, login, logout, isLoading } = useAuthStore();
+  const {
+    enabled: ssEnabled,
+    type: ssType,
+    idleTimeoutSeconds: ssTimeout,
+    setEnabled: setSsEnabled,
+    setType: setSsType,
+    setIdleTimeoutSeconds: setSsTimeout,
+  } = useScreensaverStore();
   const [syncStatus, setSyncStatus] = useState({ lastSyncAt: 0, queueLength: 0 });
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
@@ -264,6 +284,128 @@ export function Settings() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'screensaver' && (
+          <div className="space-y-8">
+            {/* Enable toggle */}
+            <div>
+              <h3
+                className="mb-1 text-sm font-semibold"
+                style={{ color: 'var(--os-text-primary)' }}
+              >
+                Screensaver
+              </h3>
+              <p
+                className="text-xs mb-4"
+                style={{ color: 'var(--os-text-muted)' }}
+              >
+                Configure the screensaver that activates after a period of inactivity.
+              </p>
+
+              <div
+                className="rounded-lg border p-4"
+                style={{
+                  borderColor: 'var(--os-border)',
+                  backgroundColor: 'var(--os-bg-secondary)',
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm" style={{ color: 'var(--os-text-primary)' }}>
+                    Enable Screensaver
+                  </span>
+                  <button
+                    onClick={() => setSsEnabled(!ssEnabled)}
+                    className="relative h-6 w-11 rounded-full transition-colors"
+                    style={{
+                      backgroundColor: ssEnabled ? 'var(--os-accent)' : 'var(--os-border)',
+                    }}
+                  >
+                    <span
+                      className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform"
+                      style={{
+                        transform: ssEnabled ? 'translateX(20px)' : 'translateX(0)',
+                      }}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Type selector */}
+            <div>
+              <h3
+                className="mb-1 text-sm font-semibold"
+                style={{ color: 'var(--os-text-primary)' }}
+              >
+                Screensaver Type
+              </h3>
+              <p
+                className="text-xs mb-4"
+                style={{ color: 'var(--os-text-muted)' }}
+              >
+                Choose which screensaver animation to display.
+              </p>
+
+              <select
+                value={ssType}
+                onChange={(e) => setSsType(e.target.value as ScreensaverType)}
+                className="w-full max-w-xs rounded-lg border px-3 py-2 text-sm outline-none"
+                style={{
+                  borderColor: 'var(--os-border)',
+                  backgroundColor: 'var(--os-bg-tertiary)',
+                  color: 'var(--os-text-primary)',
+                }}
+              >
+                {SCREENSAVER_TYPES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Idle timeout */}
+            <div>
+              <h3
+                className="mb-1 text-sm font-semibold"
+                style={{ color: 'var(--os-text-primary)' }}
+              >
+                Idle Timeout
+              </h3>
+              <p
+                className="text-xs mb-4"
+                style={{ color: 'var(--os-text-muted)' }}
+              >
+                Duration of inactivity (in seconds) before the screensaver activates.
+              </p>
+
+              <div className="flex items-center gap-4 max-w-md">
+                <input
+                  type="range"
+                  min={60}
+                  max={300}
+                  step={10}
+                  value={ssTimeout}
+                  onChange={(e) => setSsTimeout(Number(e.target.value))}
+                  className="flex-1 accent-[var(--os-accent)]"
+                />
+                <span
+                  className="min-w-[3.5rem] text-sm font-medium tabular-nums text-right"
+                  style={{ color: 'var(--os-text-primary)' }}
+                >
+                  {ssTimeout}s
+                </span>
+              </div>
+              <div
+                className="mt-2 flex justify-between text-[10px]"
+                style={{ color: 'var(--os-text-muted)' }}
+              >
+                <span>1 min</span>
+                <span>5 min</span>
               </div>
             </div>
           </div>

@@ -130,7 +130,19 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
     [win.id, focus, resize],
   );
 
-  if (win.isMinimized) return null;
+  if (win.isMinimized && !win.isMinimizing) return null;
+
+  // Minimize animation: shrink toward taskbar
+  const minimizeTransform = win.isMinimizing
+    ? 'scale(0.1) translateY(calc(100vh - 48px))'
+    : undefined;
+
+  // Restore animation: expand from taskbar
+  const restoreTransform = win.isRestoring
+    ? 'scale(0.1) translateY(calc(100vh - 48px))'
+    : undefined;
+
+  const animating = win.isMinimizing || win.isRestoring;
 
   const frameStyle: React.CSSProperties = win.isMaximized
     ? {
@@ -139,8 +151,9 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
         width: '100%',
         height: '100%',
         zIndex: win.zIndex,
-        transform: 'none',
-        transition: 'all 150ms ease',
+        transform: minimizeTransform ?? restoreTransform,
+        transition: 'all 200ms ease-in',
+        opacity: win.isMinimizing ? 0 : 1,
       }
     : {
         position: 'absolute',
@@ -149,8 +162,9 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
         width: win.bounds.width,
         height: win.bounds.height,
         zIndex: win.zIndex,
-        transform: 'translateZ(0)',
-        transition: win.snap !== 'none' ? 'all 150ms ease' : undefined,
+        transform: minimizeTransform ?? restoreTransform ?? (win.snap !== 'none' ? undefined : 'translateZ(0)'),
+        transition: animating || win.snap !== 'none' ? 'all 200ms ease-in' : undefined,
+        opacity: win.isMinimizing ? 0 : 1,
       };
 
   const resizeHandles: { dir: ResizeHandle; className: string }[] = [

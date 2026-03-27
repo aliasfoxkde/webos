@@ -2,6 +2,7 @@ import { Component, type ReactNode, type ErrorInfo } from 'react';
 
 interface Props {
   children: ReactNode;
+  appName?: string;
   fallback?: ReactNode;
 }
 
@@ -21,8 +22,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('ErrorBoundary caught:', error, info.componentStack);
+    console.error(`ErrorBoundary [${this.props.appName ?? 'unknown'}]:`, error, info.componentStack);
   }
+
+  private handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
 
   render() {
     if (this.state.hasError) {
@@ -30,10 +35,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex h-full flex-col items-center justify-center gap-4 bg-[var(--os-bg-primary)] p-8">
-          <div className="text-4xl">!</div>
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full text-xl font-bold text-white"
+            style={{ backgroundColor: 'var(--os-error)' }}
+          >
+            !
+          </div>
           <div className="text-center">
             <p className="text-sm font-medium text-[var(--os-text-primary)]">
-              Something went wrong
+              {this.props.appName ?? 'App'} encountered an error
             </p>
             <p className="mt-1 max-w-md text-xs text-[var(--os-text-muted)]">
               {this.state.error?.message ?? 'An unexpected error occurred'}
@@ -42,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             className="rounded-lg px-4 py-2 text-xs font-medium text-white"
             style={{ backgroundColor: 'var(--os-accent)' }}
-            onClick={() => this.setState({ hasError: false, error: null })}
+            onClick={this.handleRetry}
           >
             Try Again
           </button>

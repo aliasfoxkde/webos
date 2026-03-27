@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useQuickSettingsStore } from '@/stores/quick-settings-store';
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
@@ -65,8 +66,9 @@ const BORDER_COLORS: Record<NotificationType, string> = {
 export function NotificationContainer() {
   const notifications = useNotificationStore((s) => s.notifications);
   const dismiss = useNotificationStore((s) => s.dismiss);
+  const dndEnabled = useQuickSettingsStore((s) => s.dndEnabled);
 
-  if (notifications.length === 0) return null;
+  if (dndEnabled || notifications.length === 0) return null;
 
   return (
     <div className="fixed bottom-14 right-3 z-[99999] flex flex-col gap-2 pointer-events-none">

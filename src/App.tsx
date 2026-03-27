@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useKernelStore } from '@/stores/kernel-store';
 import { Desktop } from '@/shell/Desktop';
 import { Taskbar } from '@/shell/Taskbar';
@@ -7,6 +7,9 @@ import { ThemeProvider } from '@/themes/theme-context';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { NotificationContainer } from '@/shell/notifications';
 import { LoadingScreen, BootScreen } from '@/ui/LoadingScreen';
+import { ErrorBoundary } from '@/ui/ErrorBoundary';
+import { LockScreen } from '@/shell/LockScreen';
+import { Screensaver } from '@/shell/Screensaver';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('app');
@@ -25,12 +28,19 @@ const TextEditor = lazy(() => import('@/apps/text-editor').then((m) => ({ defaul
 const ImageViewer = lazy(() => import('@/apps/image-viewer').then((m) => ({ default: m.ImageViewer })));
 const TaskManager = lazy(() => import('@/apps/task-manager').then((m) => ({ default: m.TaskManager })));
 const Settings = lazy(() => import('@/apps/settings').then((m) => ({ default: m.Settings })));
+const Browser = lazy(() => import('@/apps/browser').then((m) => ({ default: m.Browser })));
+const Weather = lazy(() => import('@/apps/weather').then((m) => ({ default: m.Weather })));
+const Calendar = lazy(() => import('@/apps/calendar').then((m) => ({ default: m.Calendar })));
+const Clock = lazy(() => import('@/apps/clock').then((m) => ({ default: m.Clock })));
+const Tasks = lazy(() => import('@/apps/tasks').then((m) => ({ default: m.Tasks })));
+const Photos = lazy(() => import('@/apps/photos').then((m) => ({ default: m.Photos })));
 
 function renderAppContent(_windowId: string, appId: string) {
-  const content = (
-    <Suspense fallback={<LoadingScreen />}>
-      {(() => {
-        switch (appId) {
+  return (
+    <ErrorBoundary appName={appId}>
+      <Suspense fallback={<LoadingScreen />}>
+        {(() => {
+          switch (appId) {
           case 'file-manager':
             return <FileManager />;
           case 'writer':
@@ -57,6 +67,18 @@ function renderAppContent(_windowId: string, appId: string) {
             return <TaskManager />;
           case 'settings':
             return <Settings />;
+          case 'browser':
+            return <Browser />;
+          case 'weather':
+            return <Weather />;
+          case 'calendar':
+            return <Calendar />;
+          case 'clock':
+            return <Clock />;
+          case 'tasks':
+            return <Tasks />;
+          case 'photos':
+            return <Photos />;
           default:
             return (
               <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
@@ -65,33 +87,51 @@ function renderAppContent(_windowId: string, appId: string) {
             );
         }
       })()}
-    </Suspense>
+      </Suspense>
+    </ErrorBoundary>
   );
-  return content;
 }
 
 function AppContent() {
   const boot = useKernelStore((s) => s.boot);
+  const booted = useKernelStore((s) => s.booted);
+  const [isLocked, setIsLocked] = useState(false);
 
-  useKeyboardShortcuts();
+  useKeyboardShortcuts([
+    {
+      key: 'l',
+      meta: true,
+      action: () => setIsLocked(true),
+      description: 'Lock screen',
+    },
+  ]);
 
   useEffect(() => {
     log.info('App mounting — booting kernel...');
     boot();
   }, [boot]);
 
-  const booted = useKernelStore((s) => s.booted);
-
   if (!booted) {
     return <BootScreen />;
+  }
+
+  if (isLocked) {
+    return (
+      <div className="h-screen w-screen overflow-hidden">
+        <Desktop />
+        <WindowContainer renderContent={renderAppContent} />
+        <LockScreen onUnlock={() => setIsLocked(false)} />
+      </div>
+    );
   }
 
   return (
     <div className="h-screen w-screen overflow-hidden">
       <Desktop />
       <WindowContainer renderContent={renderAppContent} />
-      <Taskbar />
+      <Taskbar onLock={() => setIsLocked(true)} />
       <NotificationContainer />
+      <Screensaver />
     </div>
   );
 }

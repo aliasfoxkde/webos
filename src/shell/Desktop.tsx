@@ -6,6 +6,7 @@ import { useKernel } from '@/hooks/use-kernel';
 import { getWallpaper, getSavedWallpaperId, cycleWallpaper } from './wallpapers';
 import { mkdir, writeFile } from '@/vfs/vfs';
 import { getAppList } from './app-list';
+import { useDesktopLayoutStore } from './desktop-layout-store';
 
 export function Desktop() {
   const { launchApp } = useKernel();
@@ -14,6 +15,8 @@ export function Desktop() {
 
   // Desktop shortcuts: show first 8 registered apps
   const shortcuts = React.useMemo(() => getAppList().slice(0, 8), []);
+  const iconPositions = useDesktopLayoutStore((s) => s.positions);
+  const resetPositions = useDesktopLayoutStore((s) => s.resetPositions);
 
   // Listen for wallpaper changes from Settings app
   useEffect(() => {
@@ -59,6 +62,7 @@ export function Desktop() {
     () => {
       launchApp('settings');
     },
+    resetPositions,
   );
 
   return (
@@ -68,16 +72,25 @@ export function Desktop() {
       onContextMenu={handleContextMenu}
       onClick={closeContextMenu}
     >
-      {/* Desktop Icons Grid */}
-      <div className="p-4 flex flex-col flex-wrap gap-1 h-[calc(100vh-48px)] content-start">
-        {shortcuts.map((shortcut) => (
-          <DesktopIcon
-            key={shortcut.id}
-            name={shortcut.name}
-            icon={shortcut.icon}
-            onDoubleClick={() => handleDoubleClick(shortcut.id)}
-          />
-        ))}
+      {/* Desktop Icons */}
+      <div className="absolute inset-0 overflow-hidden">
+        {shortcuts.map((shortcut) => {
+          const pos = iconPositions[shortcut.id] ?? { x: 16, y: 16 };
+          return (
+            <div
+              key={shortcut.id}
+              className="absolute"
+              style={{ left: pos.x, top: pos.y }}
+            >
+              <DesktopIcon
+                appId={shortcut.id}
+                name={shortcut.name}
+                icon={shortcut.icon}
+                onDoubleClick={() => handleDoubleClick(shortcut.id)}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Context Menu */}

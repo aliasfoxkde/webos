@@ -4,9 +4,10 @@ import { getAppList } from './app-list';
 
 interface StartMenuProps {
   onClose: () => void;
+  onLock?: () => void;
 }
 
-export function StartMenu({ onClose }: StartMenuProps) {
+export function StartMenu({ onClose, onLock }: StartMenuProps) {
   const [search, setSearch] = React.useState('');
   const [showPower, setShowPower] = useState(false);
   const { launchApp } = useKernel();
@@ -37,6 +38,11 @@ export function StartMenu({ onClose }: StartMenuProps) {
 
   const handleSleep = () => {
     onClose();
+  };
+
+  const handleLock = () => {
+    onClose();
+    onLock?.();
   };
 
   const handleRestart = () => {
@@ -112,6 +118,12 @@ export function StartMenu({ onClose }: StartMenuProps) {
             <div
               className="absolute bottom-full right-0 mb-1 w-40 rounded-lg border border-[var(--os-menu-border)] bg-[var(--os-menu-bg)] shadow-[var(--os-shadow-lg)] overflow-hidden"
             >
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[var(--os-text-primary)] hover:bg-[var(--os-menu-hover)] transition-colors"
+                onClick={handleLock}
+              >
+                <span>🔒</span> Lock
+              </button>
               <button
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[var(--os-text-primary)] hover:bg-[var(--os-menu-hover)] transition-colors"
                 onClick={handleSleep}

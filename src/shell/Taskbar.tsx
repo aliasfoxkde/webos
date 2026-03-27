@@ -4,11 +4,17 @@ import { SystemTray } from './SystemTray';
 import { StartMenu } from './StartMenu';
 import { SearchBar } from './SearchBar';
 import { ContextMenu } from './ContextMenu';
+import { QuickSettings } from './QuickSettings';
 import { getTaskbarContextMenuItems, getTaskbarWindowContextMenuItems } from './context-menu-items';
 import { useKernel } from '@/hooks/use-kernel';
 
-export function Taskbar() {
+interface TaskbarProps {
+  onLock?: () => void;
+}
+
+export function Taskbar({ onLock }: TaskbarProps) {
   const [showStartMenu, setShowStartMenu] = React.useState(false);
+  const [showQuickSettings, setShowQuickSettings] = React.useState(false);
   const [taskbarMenu, setTaskbarMenu] = useState<{ x: number; y: number } | null>(null);
   const [winMenu, setWinMenu] = useState<{ x: number; y: number; windowId: string; title: string; isMinimized: boolean } | null>(null);
   const windows = useWindowStore((s) => s.windows);
@@ -76,6 +82,7 @@ export function Taskbar() {
         onClick={() => {
           closeTaskbarMenu();
           closeWinMenu();
+          setShowQuickSettings(false);
         }}
       >
         {/* Start Button */}
@@ -163,13 +170,21 @@ export function Taskbar() {
         />
 
         {/* System Tray */}
-        <SystemTray />
+        <div onClick={() => setShowQuickSettings((s) => !s)}>
+          <SystemTray />
+        </div>
       </div>
 
       {/* Start Menu */}
       {showStartMenu && (
-        <StartMenu onClose={() => setShowStartMenu(false)} />
+        <StartMenu onClose={() => setShowStartMenu(false)} onLock={onLock} />
       )}
+
+      {/* Quick Settings */}
+      <QuickSettings
+        open={showQuickSettings}
+        onClose={() => setShowQuickSettings(false)}
+      />
 
       {/* Taskbar Context Menu */}
       {taskbarMenu && (

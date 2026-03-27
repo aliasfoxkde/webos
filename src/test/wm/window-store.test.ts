@@ -123,11 +123,14 @@ describe('Window Store', () => {
     });
 
     it('should un-minimize when focusing', () => {
+      vi.useFakeTimers();
       const win = useWindowStore.getState().open({
         processId: 'proc-1', appId: 'app1', title: 'W1',
       });
       useWindowStore.getState().minimize(win.id);
+      vi.advanceTimersByTime(250);
       expect(useWindowStore.getState().get(win.id)!.isMinimized).toBe(true);
+      vi.useRealTimers();
 
       useWindowStore.getState().focus(win.id);
       expect(useWindowStore.getState().get(win.id)!.isMinimized).toBe(false);
@@ -136,13 +139,16 @@ describe('Window Store', () => {
 
   describe('minimize', () => {
     it('should minimize a window', () => {
+      vi.useFakeTimers();
       const win = useWindowStore.getState().open({
         processId: 'proc-1', appId: 'app1', title: 'W1',
       });
       useWindowStore.getState().minimize(win.id);
+      vi.advanceTimersByTime(250);
 
       expect(useWindowStore.getState().get(win.id)!.isMinimized).toBe(true);
       expect(useWindowStore.getState().get(win.id)!.isActive).toBe(false);
+      vi.useRealTimers();
     });
 
     it('should activate next top window', () => {

@@ -34,7 +34,9 @@ export interface WindowState {
   maxBounds?: WindowSize;
   zIndex: number;
   isMinimized: boolean;
+  isMinimizing: boolean;
   isMaximized: boolean;
+  isRestoring: boolean;
   snap: SnapPosition;
   prevBounds?: WindowBounds; // stored before maximize/snap for restore
   isActive: boolean;
