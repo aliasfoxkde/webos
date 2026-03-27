@@ -10,6 +10,7 @@ import { FileManager } from '@/apps/file-manager';
 import { Writer } from '@/apps/writer';
 import { Calc } from '@/apps/calc';
 import { Notes } from '@/apps/notes';
+import { Draw } from '@/apps/draw';
 
 function AppContent() {
   const boot = useKernelStore((s) => s.boot);
@@ -49,6 +50,8 @@ function AppContent() {
             return <Calc />;
           case 'notes':
             return <Notes />;
+          case 'draw':
+            return <Draw />;
           default:
             return (
               <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
