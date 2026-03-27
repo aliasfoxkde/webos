@@ -41,8 +41,36 @@ body,
 
 /* Focus styles */
 :focus-visible {
-  outline: 2px solid var(--os-border-focus);
+  outline: 2px solid var(--os-accent);
   outline-offset: 2px;
+  border-radius: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: var(--os-accent);
+  color: white;
+  padding: 8px 16px;
+  z-index: 99999;
+  font-size: 12px;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* High contrast focus ring */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid ButtonText;
+  }
 }
 
 /* Reduced motion */
