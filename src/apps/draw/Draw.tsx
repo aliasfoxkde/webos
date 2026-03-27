@@ -66,8 +66,10 @@ export function Draw({ filePath }: DrawProps) {
     canvas.selection = tool === 'select';
 
     if (tool === 'freehand') {
-      canvas.freeDrawingBrush.width = strokeWidth;
-      canvas.freeDrawingBrush.color = strokeColor;
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.width = strokeWidth;
+        canvas.freeDrawingBrush.color = strokeColor;
+      }
     }
 
     // Deselect all when switching tools
@@ -80,7 +82,7 @@ export function Draw({ filePath }: DrawProps) {
     const canvas = fabricRef.current;
     if (!canvas || activeTool === 'select' || activeTool === 'freehand' || activeTool === 'eraser') return;
 
-    const pointer = canvas.getPointer(opt.e);
+    const pointer = canvas.getScenePoint(opt.e);
     const isShiftKey = opt.e.shiftKey;
 
     switch (activeTool) {
@@ -162,7 +164,7 @@ export function Draw({ filePath }: DrawProps) {
     const origin = (canvas as any).__drawOrigin;
     if (!shape || !origin) return;
 
-    const pointer = canvas.getPointer(opt.e);
+    const pointer = canvas.getScenePoint(opt.e);
     const opt_e = opt.e.shiftKey;
 
     switch (activeTool) {
@@ -271,7 +273,7 @@ export function Draw({ filePath }: DrawProps) {
 
   const handleExportPNG = () => {
     if (!fabricRef.current) return;
-    const dataURL = fabricRef.current.toDataURL({ format: 'png' });
+    const dataURL = fabricRef.current.toDataURL({ format: 'png', multiplier: 1 });
     const a = document.createElement('a');
     a.href = dataURL;
     a.download = 'drawing.png';
@@ -304,7 +306,7 @@ export function Draw({ filePath }: DrawProps) {
   const handleClear = () => {
     if (!confirm('Clear canvas?')) return;
     fabricRef.current?.clear();
-    fabricRef.current?.setBackgroundColor('#ffffff');
+    if (fabricRef.current) fabricRef.current.backgroundColor = '#ffffff';
     fabricRef.current?.renderAll();
     setSaved(false);
   };

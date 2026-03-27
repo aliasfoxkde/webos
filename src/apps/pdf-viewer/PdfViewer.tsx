@@ -66,6 +66,7 @@ export function PdfViewer({ filePath, fileData }: PdfViewerProps) {
     let cancelled = false;
 
     async function renderPage() {
+      if (!pdf) return;
       const page = await pdf.getPage(currentPage);
       if (cancelled) return;
 
@@ -73,11 +74,13 @@ export function PdfViewer({ filePath, fileData }: PdfViewerProps) {
       const canvas = canvasRef.current!;
       const context = canvas.getContext('2d');
 
+      if (!context) return;
+
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
       await page.render({
-        canvasContext: context,
+        canvas,
         viewport,
       }).promise;
     }

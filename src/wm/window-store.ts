@@ -1,9 +1,10 @@
 import { create } from 'zustand';
+import { SnapPosition } from './types';
 import type {
   WindowState,
   WindowConfig,
   WindowBounds,
-  SnapPosition,
+  WindowSize,
 } from './types';
 import { DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE, centerWindow } from './types';
 import { eventBus } from '@/kernel/event-bus';
@@ -99,7 +100,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       };
     });
 
-    eventBus.emit('window:close', { windowId, appId: window.appId });
+    eventBus.emit('window:close', { windowId });
   },
 
   focus(windowId) {
@@ -117,7 +118,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       zIndexCounter: zIndex,
     }));
 
-    eventBus.emit('window:focus', { windowId, appId: window.appId });
+    eventBus.emit('window:focus', { windowId });
   },
 
   minimize(windowId) {
@@ -135,7 +136,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
     const window = get().get(windowId);
     if (window) {
-      eventBus.emit('window:minimize', { windowId, appId: window.appId });
+      eventBus.emit('window:minimize', { windowId });
     }
   },
 
@@ -164,7 +165,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       zIndexCounter: zIndex,
     }));
 
-    eventBus.emit('window:restore', { windowId, appId: window.appId });
+    eventBus.emit('window:restore', { windowId });
   },
 
   maximize(windowId) {
@@ -172,8 +173,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     if (!window) return;
 
     const viewport: WindowSize = {
-      width: window.innerWidth,
-      height: window.innerHeight,
+      width: globalThis.innerWidth,
+      height: globalThis.innerHeight,
     };
 
     set((state) => ({
@@ -185,13 +186,13 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
               isMinimized: false,
               prevBounds: w.bounds,
               bounds: { x: 0, y: 0, ...viewport },
-              snap: 'maximize' as SnapPosition,
+              snap: SnapPosition.Maximize,
             }
           : w,
       ),
     }));
 
-    eventBus.emit('window:maximize', { windowId, appId: window.appId });
+    eventBus.emit('window:maximize', { windowId });
   },
 
   snap(windowId, position, viewport) {

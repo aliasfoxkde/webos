@@ -141,7 +141,7 @@ export class ProcessManager {
     let latest: Process | undefined;
     for (const proc of this.processes.values()) {
       if (proc.state === 'running' && proc.focusedAt !== null) {
-        if (!latest || proc.focusedAt > latest.focusedAt) {
+        if (!latest || (proc.focusedAt !== null && latest.focusedAt !== null && proc.focusedAt > latest.focusedAt)) {
           latest = proc;
         }
       }

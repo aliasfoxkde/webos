@@ -158,7 +158,7 @@ export function Impress() {
 
   const applyTheme = (theme: typeof THEMES[number]) => {
     if (!fabricRef.current) return;
-    fabricRef.current.setBackgroundColor(theme.background);
+    fabricRef.current.backgroundColor = theme.background;
     fabricRef.current.renderAll();
     saveCurrentSlide();
   };
@@ -216,23 +216,32 @@ export function Impress() {
 
       const slide = slides[i];
       if (slide && slide.canvas !== '{}') {
-        fabric.FabricCanvas.fromJSON(JSON.parse(slide.canvas), (canvas: fabric.Canvas) => {
-          canvas.setWidth(SLIDE_WIDTH);
-          canvas.setHeight(SLIDE_HEIGHT);
-          canvas.setBackgroundColor(slide.background);
-          canvas.renderAll();
-          const dataURL = canvas.toDataURL({ format: 'png' });
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = SLIDE_WIDTH;
+        exportCanvas.height = SLIDE_HEIGHT;
+        const fCanvas = new fabric.Canvas(exportCanvas, {
+          width: SLIDE_WIDTH,
+          height: SLIDE_HEIGHT,
+          backgroundColor: slide.background,
+          selection: false,
+          renderOnAddRemove: false,
+        });
+        fCanvas.loadFromJSON(JSON.parse(slide.canvas)).then(() => {
+          fCanvas.renderAll();
+          const dataURL = fCanvas.toDataURL({ format: 'png', multiplier: 1 });
           pdf.addImage(dataURL, 'PNG', 0, 0, SLIDE_WIDTH, SLIDE_HEIGHT);
           if (i === slides.length - 1) {
             pdf.save('presentation.pdf');
           }
-          canvas.dispose();
+          fCanvas.dispose();
         });
       } else {
         // Blank slide
         const ctx = tmpCanvas.getContext('2d');
-        ctx.fillStyle = slide?.background ?? '#ffffff';
-        ctx.fillRect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT);
+        if (ctx) {
+          ctx.fillStyle = slide?.background ?? '#ffffff';
+          ctx.fillRect(0, 0, SLIDE_WIDTH, SLIDE_HEIGHT);
+        }
         const dataURL = tmpCanvas.toDataURL();
         pdf.addImage(dataURL, 'PNG', 0, 0, SLIDE_WIDTH, SLIDE_HEIGHT);
         if (i === slides.length - 1) pdf.save('presentation.pdf');

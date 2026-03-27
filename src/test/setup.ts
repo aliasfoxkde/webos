@@ -58,4 +58,5 @@ class MockDOMMatrix {
   toString() { return 'matrix(1, 0, 0, 1, 0, 0)'; }
 }
 
-globalThis.DOMMatrix = MockDOMMatrix;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).DOMMatrix = MockDOMMatrix;

@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
-import type { SnapPosition, WindowSize } from './types';
+import { SnapPosition } from './types';
+import type { WindowSize } from './types';
 
 interface SnapOptions {
   enabled?: boolean;
@@ -30,16 +31,16 @@ export function useWindowSnap({
       const threshold = snapThreshold;
 
       // Edges
-      if (mouseX <= threshold && mouseY <= threshold) return 'top-left';
-      if (mouseX >= width - threshold && mouseY <= threshold) return 'top-right';
-      if (mouseX <= threshold && mouseY >= height - threshold) return 'bottom-left';
-      if (mouseX >= width - threshold && mouseY >= height - threshold) return 'bottom-right';
+      if (mouseX <= threshold && mouseY <= threshold) return SnapPosition.TopLeft;
+      if (mouseX >= width - threshold && mouseY <= threshold) return SnapPosition.TopRight;
+      if (mouseX <= threshold && mouseY >= height - threshold) return SnapPosition.BottomLeft;
+      if (mouseX >= width - threshold && mouseY >= height - threshold) return SnapPosition.BottomRight;
 
       // Sides
-      if (mouseX <= threshold) return 'left';
-      if (mouseX >= width - threshold) return 'right';
-      if (mouseY <= threshold) return 'top';
-      if (mouseY >= height - threshold) return 'bottom';
+      if (mouseX <= threshold) return SnapPosition.Left;
+      if (mouseX >= width - threshold) return SnapPosition.Right;
+      if (mouseY <= threshold) return SnapPosition.Top;
+      if (mouseY >= height - threshold) return SnapPosition.Bottom;
 
       return null;
     },

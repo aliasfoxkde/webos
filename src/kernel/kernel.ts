@@ -1,7 +1,7 @@
-import { eventBus } from './event-bus';
-import { processManager } from './process-manager';
-import { appRegistry } from './app-registry';
-import { permissionManager } from './permissions';
+import { eventBus, EventBus } from './event-bus';
+import { processManager, ProcessManager } from './process-manager';
+import { appRegistry, AppRegistry } from './app-registry';
+import { permissionManager, PermissionManager } from './permissions';
 import type { AppDefinition, PermissionType } from './types';
 
 /**

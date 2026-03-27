@@ -96,7 +96,11 @@ export function getCalculatedValue(
 ): string | number | null {
   try {
     const value = engine.getCellValue({ sheet, row, col });
-    return value ?? null;
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'boolean') return null;
+    // DetailedCellError objects are not string/number, filter them out
+    if (typeof value !== 'string' && typeof value !== 'number') return null;
+    return value;
   } catch {
     return null;
   }
