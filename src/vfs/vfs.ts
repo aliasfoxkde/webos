@@ -2,6 +2,7 @@ import { db } from './db';
 import { getMimeType } from './mime';
 import { eventBus } from '@/kernel/event-bus';
 import type { FileNode, VFSEvent } from './types';
+import { enqueueSync } from './sync-r2';
 
 let idCounter = 0;
 
@@ -137,6 +138,7 @@ export async function writeFile(
     };
     await db.files.put(updated);
     emitVFS('update', path);
+    enqueueSync('upload', path);
     return updated;
   }
 
@@ -156,6 +158,7 @@ export async function writeFile(
   };
   await db.files.add(node);
   emitVFS('create', path);
+  enqueueSync('upload', path);
   return node;
 }
 
@@ -205,6 +208,9 @@ export async function rm(path: string): Promise<void> {
 
   await db.files.delete(node.id);
   emitVFS('delete', path);
+  if (node.type === 'file') {
+    enqueueSync('delete', path);
+  }
 }
 
 /** Remove a node by ID (internal, used by recursive rm). */

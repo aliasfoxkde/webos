@@ -3,18 +3,14 @@ compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
 
-# R2 bucket for file storage (created in Phase 14)
-# [[r2_buckets]]
-# binding = "FILES"
-# bucket_name = "webos-files"
+# R2 bucket for file storage
+# Create with: npx wrangler r2 bucket create webos-files
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "webos-files"
 
-# KV namespace for user settings (created in Phase 14)
-# [[kv_namespaces]]
-# binding = "SETTINGS"
-# id = ""
-
-# D1 database for metadata (created in Phase 14)
-# [[d1_databases]]
-# binding = "META"
-# database_name = "webos-meta"
-# database_id = ""
+# KV namespace for user settings
+# Create with: npx wrangler kv namespace create WEBOS_SETTINGS
+[[kv_namespaces]]
+binding = "SETTINGS"
+id = ""

@@ -1,16 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/themes/theme-context';
+import { useAuthStore } from '@/stores/auth-store';
+import { getSyncStatus, fullSync, processSyncQueue, clearSyncState } from '@/vfs/sync-r2';
 
-type SettingsTab = 'theme' | 'about';
+type SettingsTab = 'theme' | 'sync' | 'about';
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'theme', label: 'Theme' },
+  { id: 'sync', label: 'Cloud Sync' },
   { id: 'about', label: 'About' },
 ];
 
 export function Settings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('theme');
   const { currentTheme, themes, setTheme } = useTheme();
+  const { isAuthenticated, userId, username, token, login, logout, isLoading } = useAuthStore();
+  const [syncStatus, setSyncStatus] = useState({ lastSyncAt: 0, queueLength: 0 });
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setSyncStatus(getSyncStatus());
+      const interval = setInterval(() => setSyncStatus(getSyncStatus()), 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = useCallback(async () => {
+    setLoginError(null);
+    const ok = await login(loginForm.username, loginForm.password);
+    if (!ok) setLoginError('Login failed');
+  }, [login, loginForm]);
+
+  const handleSync = useCallback(async () => {
+    if (!token || !userId) return;
+    setSyncResult('Syncing...');
+    try {
+      await processSyncQueue(token);
+      const result = await fullSync(token, userId);
+      setSyncResult(`Sync complete: ${result.uploaded} uploaded, ${result.downloaded} downloaded`);
+      setSyncStatus(getSyncStatus());
+    } catch {
+      setSyncResult('Sync failed');
+    }
+  }, [token, userId]);
+
+  const handleLogout = useCallback(() => {
+    clearSyncState();
+    logout();
+  }, [logout]);
 
   return (
     <div
@@ -158,6 +198,127 @@ export function Settings() {
           </div>
         )}
 
+        {activeTab === 'sync' && (
+          <div className="space-y-6">
+            {!isAuthenticated ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="mb-1 text-sm font-semibold" style={{ color: 'var(--os-text-primary)' }}>
+                    Sign In
+                  </h3>
+                  <p className="text-xs" style={{ color: 'var(--os-text-muted)' }}>
+                    Sign in to sync your files across devices using Cloudflare R2.
+                  </p>
+                </div>
+
+                {loginError && (
+                  <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-400">
+                    {loginError}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                    style={{
+                      borderColor: 'var(--os-border)',
+                      backgroundColor: 'var(--os-bg-tertiary)',
+                      color: 'var(--os-text-primary)',
+                    }}
+                    value={loginForm.username}
+                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                    style={{
+                      borderColor: 'var(--os-border)',
+                      backgroundColor: 'var(--os-bg-tertiary)',
+                      color: 'var(--os-text-primary)',
+                    }}
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  />
+                  <button
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-white"
+                    style={{ backgroundColor: 'var(--os-accent)' }}
+                    onClick={handleLogin}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Signing in...' : 'Sign In'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="mb-1 text-sm font-semibold" style={{ color: 'var(--os-text-primary)' }}>
+                      Cloud Sync
+                    </h3>
+                    <p className="text-xs" style={{ color: 'var(--os-text-muted)' }}>
+                      Signed in as {username}
+                    </p>
+                  </div>
+                  <button
+                    className="rounded-lg border px-3 py-1.5 text-xs"
+                    style={{
+                      borderColor: 'var(--os-border)',
+                      color: 'var(--os-text-secondary)',
+                    }}
+                    onClick={handleLogout}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+
+                <div
+                  className="rounded-lg border"
+                  style={{
+                    borderColor: 'var(--os-border)',
+                    backgroundColor: 'var(--os-bg-secondary)',
+                  }}
+                >
+                  <div className="divide-y" style={{ borderColor: 'var(--os-border)' }}>
+                    <div className="flex items-center justify-between px-4 py-2.5" style={{ borderColor: 'var(--os-border)' }}>
+                      <span className="text-xs font-medium" style={{ color: 'var(--os-text-secondary)' }}>Status</span>
+                      <span className="text-xs" style={{ color: syncStatus.queueLength > 0 ? '#f59e0b' : '#22c55e' }}>
+                        {syncStatus.queueLength > 0 ? `${syncStatus.queueLength} files pending` : 'All synced'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-2.5" style={{ borderColor: 'var(--os-border)' }}>
+                      <span className="text-xs font-medium" style={{ color: 'var(--os-text-secondary)' }}>Last Sync</span>
+                      <span className="text-xs" style={{ color: 'var(--os-text-primary)' }}>
+                        {syncStatus.lastSyncAt ? new Date(syncStatus.lastSyncAt).toLocaleString() : 'Never'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-white"
+                  style={{ backgroundColor: 'var(--os-accent)' }}
+                  onClick={handleSync}
+                >
+                  Sync Now
+                </button>
+
+                {syncResult && (
+                  <div className="rounded-lg border px-4 py-2 text-xs" style={{
+                    borderColor: 'var(--os-border)',
+                    color: 'var(--os-text-secondary)',
+                  }}>
+                    {syncResult}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'about' && (
           <div className="space-y-6">
             {/* Logo / Title */}
@@ -205,6 +366,7 @@ export function Settings() {
                   ['Virtual File System', 'IndexedDB-backed VFS'],
                   ['Theme Engine', 'CSS Variables + Data Attributes'],
                   ['Rendering', 'Client-side SPA (Vite)'],
+                  ['Cloud Storage', 'Cloudflare R2 + KV'],
                 ].map(([label, value]) => (
                   <div
                     key={label}
