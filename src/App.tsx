@@ -12,16 +12,61 @@ import { Calc } from '@/apps/calc';
 import { Notes } from '@/apps/notes';
 import { Draw } from '@/apps/draw';
 import { Impress } from '@/apps/impress';
+import { PdfViewer } from '@/apps/pdf-viewer';
+import { Terminal } from '@/apps/terminal';
+import { Calculator } from '@/apps/calculator';
+import { TextEditor } from '@/apps/text-editor';
+import { ImageViewer } from '@/apps/image-viewer';
+import { TaskManager } from '@/apps/task-manager';
+import { Settings } from '@/apps/settings';
+
+function renderAppContent(_windowId: string, appId: string) {
+  switch (appId) {
+    case 'file-manager':
+      return <FileManager />;
+    case 'writer':
+      return <Writer />;
+    case 'calc':
+      return <Calc />;
+    case 'notes':
+      return <Notes />;
+    case 'draw':
+      return <Draw />;
+    case 'impress':
+      return <Impress />;
+    case 'pdf-viewer':
+      return <PdfViewer />;
+    case 'terminal':
+      return <Terminal />;
+    case 'calculator':
+      return <Calculator />;
+    case 'text-editor':
+      return <TextEditor />;
+    case 'image-viewer':
+      return <ImageViewer />;
+    case 'task-manager':
+      return <TaskManager />;
+    case 'settings':
+      return <Settings />;
+    default:
+      return (
+        <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
+          <p>{appId} — content placeholder</p>
+        </div>
+      );
+  }
+}
 
 function AppContent() {
   const boot = useKernelStore((s) => s.boot);
-  const booted = useKernelStore((s) => s.booted);
 
   useKeyboardShortcuts();
 
   useEffect(() => {
     boot();
   }, [boot]);
+
+  const booted = useKernelStore((s) => s.booted);
 
   if (!booted) {
     return (
@@ -41,28 +86,7 @@ function AppContent() {
   return (
     <div className="h-screen w-screen overflow-hidden">
       <Desktop />
-      <WindowContainer renderContent={(_windowId, appId) => {
-        switch (appId) {
-          case 'file-manager':
-            return <FileManager />;
-          case 'writer':
-            return <Writer />;
-          case 'calc':
-            return <Calc />;
-          case 'notes':
-            return <Notes />;
-          case 'draw':
-            return <Draw />;
-          case 'impress':
-            return <Impress />;
-          default:
-            return (
-              <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
-                <p>{appId} — content placeholder</p>
-              </div>
-            );
-        }
-      }} />
+      <WindowContainer renderContent={renderAppContent} />
       <Taskbar />
     </div>
   );
