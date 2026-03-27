@@ -5,8 +5,10 @@ import { StartMenu } from './StartMenu';
 import { SearchBar } from './SearchBar';
 import { ContextMenu } from './ContextMenu';
 import { QuickSettings } from './QuickSettings';
+import { NotificationCenter } from './NotificationCenter';
 import { getTaskbarContextMenuItems, getTaskbarWindowContextMenuItems } from './context-menu-items';
 import { useKernel } from '@/hooks/use-kernel';
+import { useNotificationStore } from './notifications';
 
 interface TaskbarProps {
   onLock?: () => void;
@@ -15,6 +17,8 @@ interface TaskbarProps {
 export function Taskbar({ onLock }: TaskbarProps) {
   const [showStartMenu, setShowStartMenu] = React.useState(false);
   const [showQuickSettings, setShowQuickSettings] = React.useState(false);
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const history = useNotificationStore((s) => s.history);
   const [taskbarMenu, setTaskbarMenu] = useState<{ x: number; y: number } | null>(null);
   const [winMenu, setWinMenu] = useState<{ x: number; y: number; windowId: string; title: string; isMinimized: boolean } | null>(null);
   const windows = useWindowStore((s) => s.windows);
@@ -170,8 +174,11 @@ export function Taskbar({ onLock }: TaskbarProps) {
         />
 
         {/* System Tray */}
-        <div onClick={() => setShowQuickSettings((s) => !s)}>
-          <SystemTray />
+        <div>
+          <SystemTray
+            onNotificationBellClick={() => setShowNotificationCenter((s) => !s)}
+            notificationCount={history.length}
+          />
         </div>
       </div>
 
@@ -184,6 +191,12 @@ export function Taskbar({ onLock }: TaskbarProps) {
       <QuickSettings
         open={showQuickSettings}
         onClose={() => setShowQuickSettings(false)}
+      />
+
+      {/* Notification Center */}
+      <NotificationCenter
+        open={showNotificationCenter}
+        onClose={() => setShowNotificationCenter(false)}
       />
 
       {/* Taskbar Context Menu */}

@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { SnapPosition } from './types';
-import type { WindowSize } from './types';
+import type { WindowSize, WindowBounds } from './types';
 
 interface SnapOptions {
   enabled?: boolean;
@@ -83,4 +83,31 @@ export function useWindowSnap({
     startSnapping,
     stopSnapping,
   };
+}
+
+/** Calculate the bounds a window would occupy when snapped to a given position. */
+export function getSnapBounds(position: SnapPosition, viewport: WindowSize): WindowBounds | null {
+  const { width, height } = viewport;
+  switch (position) {
+    case SnapPosition.Left:
+      return { x: 0, y: 0, width: width / 2, height };
+    case SnapPosition.Right:
+      return { x: width / 2, y: 0, width: width / 2, height };
+    case SnapPosition.Top:
+      return { x: 0, y: 0, width, height: height / 2 };
+    case SnapPosition.Bottom:
+      return { x: 0, y: height / 2, width, height: height / 2 };
+    case SnapPosition.TopLeft:
+      return { x: 0, y: 0, width: width / 2, height: height / 2 };
+    case SnapPosition.TopRight:
+      return { x: width / 2, y: 0, width: width / 2, height: height / 2 };
+    case SnapPosition.BottomLeft:
+      return { x: 0, y: height / 2, width: width / 2, height: height / 2 };
+    case SnapPosition.BottomRight:
+      return { x: width / 2, y: height / 2, width: width / 2, height: height / 2 };
+    case SnapPosition.Maximize:
+      return { x: 0, y: 0, width, height };
+    default:
+      return null;
+  }
 }

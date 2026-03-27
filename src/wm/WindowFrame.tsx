@@ -2,10 +2,10 @@ import React, { useCallback, useRef, useState } from 'react';
 import { useWindowStore } from './window-store';
 import { useWindowDrag } from './use-window-drag';
 import { useWindowResize, getResizeCursor, type ResizeHandle } from './use-window-resize';
-import { useWindowSnap } from './use-window-snap';
+import { useWindowSnap, getSnapBounds } from './use-window-snap';
 import { ContextMenu } from '@/shell/ContextMenu';
 import { getWindowTitleBarMenuItems } from '@/shell/context-menu-items';
-import type { WindowState } from './types';
+import type { WindowState, SnapPosition } from './types';
 import { MIN_WINDOW_SIZE } from './types';
 
 interface WindowFrameProps {
@@ -17,6 +17,8 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
   const { close, focus, minimize, maximize, restore, move, updateBounds } = useWindowStore();
   const titleBarRef = useRef<HTMLDivElement>(null);
   const [titleMenu, setTitleMenu] = useState<{ x: number; y: number } | null>(null);
+  const [snapPreview, setSnapPreview] = useState<SnapPosition | null>(null);
+  const snapPreviewRef = useRef<SnapPosition | null>(null);
 
   const handleDragMove = useCallback(
     (dx: number, dy: number) => {
@@ -47,11 +49,13 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
   const windowSnap = useWindowSnap({
     enabled: !win.isMaximized,
     onSnap: (position) => {
-      const viewport = { width: window.innerWidth, height: window.innerHeight };
-      useWindowStore.getState().snap(win.id, position, viewport);
+      // Show preview instead of snapping immediately
+      setSnapPreview(position);
+      snapPreviewRef.current = position;
     },
     onUnsnap: () => {
-      // Keep current bounds after drag if no snap detected
+      setSnapPreview(null);
+      snapPreviewRef.current = null;
     },
   });
 
@@ -93,9 +97,16 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
   const handleTitleBarPointerUp = useCallback(
     (e: React.PointerEvent) => {
       drag.onPointerUp(e);
+      // If a snap preview was active, apply the snap
+      if (snapPreviewRef.current) {
+        const viewport = { width: window.innerWidth, height: window.innerHeight };
+        useWindowStore.getState().snap(win.id, snapPreviewRef.current, viewport);
+      }
       windowSnap.stopSnapping();
+      setSnapPreview(null);
+      snapPreviewRef.current = null;
     },
-    [drag, windowSnap],
+    [drag, windowSnap, win.id],
   );
 
   const handleTitleBarDoubleClick = useCallback(() => {
@@ -282,6 +293,28 @@ export function WindowFrame({ window: win, children }: WindowFrameProps) {
           onClose={closeTitleMenu}
         />
       )}
+
+      {/* Snap preview overlay */}
+      {snapPreview && (() => {
+        const viewport = { width: window.innerWidth, height: window.innerHeight };
+        const bounds = getSnapBounds(snapPreview, viewport);
+        if (!bounds) return null;
+        return (
+          <div
+            className="fixed pointer-events-none rounded-lg z-[999999]"
+            style={{
+              left: bounds.x + 4,
+              top: bounds.y + 4,
+              width: bounds.width - 8,
+              height: bounds.height - 8,
+              border: '2px dashed var(--os-accent)',
+              backgroundColor: 'var(--os-accent)',
+              opacity: 0.15,
+              transition: 'all 150ms ease-out',
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

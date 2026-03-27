@@ -1,5 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useKernelStore } from '@/stores/kernel-store';
+import { useWindowStore } from '@/wm/window-store';
+import { kernel } from '@/kernel/kernel';
 import { Desktop } from '@/shell/Desktop';
 import { Taskbar } from '@/shell/Taskbar';
 import { WindowContainer } from '@/wm/WindowContainer';
@@ -34,6 +36,10 @@ const Calendar = lazy(() => import('@/apps/calendar').then((m) => ({ default: m.
 const Clock = lazy(() => import('@/apps/clock').then((m) => ({ default: m.Clock })));
 const Tasks = lazy(() => import('@/apps/tasks').then((m) => ({ default: m.Tasks })));
 const Photos = lazy(() => import('@/apps/photos').then((m) => ({ default: m.Photos })));
+const MusicPlayer = lazy(() => import('@/apps/music-player').then((m) => ({ default: m.MusicPlayer })));
+const Trash = lazy(() => import('@/apps/trash').then((m) => ({ default: m.Trash })));
+const Welcome = lazy(() => import('@/apps/welcome').then((m) => ({ default: m.Welcome })));
+const VoiceRecorder = lazy(() => import('@/apps/voice-recorder').then((m) => ({ default: m.VoiceRecorder })));
 
 function renderAppContent(_windowId: string, appId: string) {
   return (
@@ -79,6 +85,14 @@ function renderAppContent(_windowId: string, appId: string) {
             return <Tasks />;
           case 'photos':
             return <Photos />;
+          case 'music-player':
+            return <MusicPlayer />;
+          case 'trash':
+            return <Trash />;
+          case 'welcome':
+            return <Welcome />;
+          case 'voice-recorder':
+            return <VoiceRecorder />;
           default:
             return (
               <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
@@ -110,6 +124,27 @@ function AppContent() {
     log.info('App mounting — booting kernel...');
     boot();
   }, [boot]);
+
+  // Auto-launch Welcome on first boot
+  useEffect(() => {
+    if (!booted) return;
+    if (localStorage.getItem('webos-welcome-seen')) return;
+    const timer = setTimeout(() => {
+      const appDef = kernel.apps.get('welcome');
+      if (!appDef) return;
+      const win = useWindowStore.getState().open({
+        processId: '',
+        appId: 'welcome',
+        title: appDef.title ?? 'Welcome',
+        icon: appDef.icon,
+        bounds: appDef.defaultWindow
+          ? { width: appDef.defaultWindow.width, height: appDef.defaultWindow.height }
+          : undefined,
+      });
+      useKernelStore.getState().launchApp('welcome', win.id);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [booted]);
 
   if (!booted) {
     return <BootScreen />;

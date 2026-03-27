@@ -36,6 +36,12 @@ export function useKernel() {
         appId,
         title: title ?? appDef.title ?? appId,
         icon: appDef.icon,
+        bounds: appDef.defaultWindow
+          ? { width: appDef.defaultWindow.width, height: appDef.defaultWindow.height }
+          : undefined,
+        minBounds: appDef.defaultWindow?.minWidth
+          ? { width: appDef.defaultWindow.minWidth, height: appDef.defaultWindow.minHeight ?? 400 }
+          : undefined,
       });
 
       // Launch the process

@@ -9,54 +9,79 @@ export interface Notification {
   title: string;
   message?: string;
   duration?: number;
+  timestamp: number;
 }
 
 interface NotificationStore {
   notifications: Notification[];
-  add: (notification: Omit<Notification, 'id'>) => void;
+  history: Notification[];
+  add: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
   dismiss: (id: string) => void;
   clear: () => void;
+  clearHistory: () => void;
+  removeFromHistory: (id: string) => void;
 }
 
 export const useNotificationStore = create<NotificationStore>((set) => ({
   notifications: [],
+  history: [],
 
   add(notification) {
     const id = `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const entry: Notification = { id, duration: 3500, ...notification };
+    const entry: Notification = { id, duration: 3500, timestamp: Date.now(), ...notification };
     set((state) => ({
       notifications: [...state.notifications, entry],
     }));
 
-    // Auto-dismiss
+    // Auto-dismiss: move to history
     if (entry.duration && entry.duration > 0) {
       setTimeout(() => {
-        set((state) => ({
-          notifications: state.notifications.filter((n) => n.id !== id),
-        }));
+        set((state) => {
+          const notif = state.notifications.find((n) => n.id === id);
+          if (!notif) return state;
+          return {
+            notifications: state.notifications.filter((n) => n.id !== id),
+            history: [notif, ...state.history],
+          };
+        });
       }, entry.duration);
     }
   },
 
   dismiss(id) {
-    set((state) => ({
-      notifications: state.notifications.filter((n) => n.id !== id),
-    }));
+    set((state) => {
+      const notif = state.notifications.find((n) => n.id === id);
+      if (!notif) return state;
+      return {
+        notifications: state.notifications.filter((n) => n.id !== id),
+        history: [notif, ...state.history],
+      };
+    });
   },
 
   clear() {
     set({ notifications: [] });
   },
+
+  clearHistory() {
+    set({ history: [] });
+  },
+
+  removeFromHistory(id) {
+    set((state) => ({
+      history: state.history.filter((n) => n.id !== id),
+    }));
+  },
 }));
 
-const ICONS: Record<NotificationType, string> = {
+export const ICONS: Record<NotificationType, string> = {
   info: 'ℹ️',
   success: '✅',
   warning: '⚠️',
   error: '❌',
 };
 
-const BORDER_COLORS: Record<NotificationType, string> = {
+export const BORDER_COLORS: Record<NotificationType, string> = {
   info: 'var(--os-accent)',
   success: 'var(--os-success)',
   warning: 'var(--os-warning)',
