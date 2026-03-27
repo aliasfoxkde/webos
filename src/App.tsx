@@ -9,6 +9,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FileManager } from '@/apps/file-manager';
 import { Writer } from '@/apps/writer';
 import { Calc } from '@/apps/calc';
+import { Notes } from '@/apps/notes';
 
 function AppContent() {
   const boot = useKernelStore((s) => s.boot);
@@ -46,6 +47,8 @@ function AppContent() {
             return <Writer />;
           case 'calc':
             return <Calc />;
+          case 'notes':
+            return <Notes />;
           default:
             return (
               <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">
