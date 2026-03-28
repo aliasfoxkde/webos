@@ -7,11 +7,13 @@ export function Browser() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const {
     current,
+    history,
     navigate,
     back,
     forward,
     canGoBack,
     canGoForward,
+    clearHistory,
   } = useBrowserHistory('about:blank');
 
   const handleSubmit = useCallback(
@@ -170,6 +172,18 @@ export function Browser() {
             >
               Enter a URL or search term above to get started
             </p>
+            {history.length > 1 && (
+              <button
+                onClick={clearHistory}
+                className="text-xs px-3 py-1 rounded-md border transition-colors"
+                style={{
+                  borderColor: 'var(--os-border)',
+                  color: 'var(--os-text-secondary)',
+                }}
+              >
+                Clear History
+              </button>
+            )}
             <form onSubmit={handleSubmit} className="w-full max-w-md px-4">
               <input
                 type="text"

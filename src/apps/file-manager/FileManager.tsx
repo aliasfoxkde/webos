@@ -5,6 +5,9 @@ import { FileGrid } from './FileGrid';
 import { Toolbar } from './Toolbar';
 import { useFileOperations } from './use-file-operations';
 import { readdir } from '@/vfs/vfs';
+import { kernel } from '@/kernel/kernel';
+import { useWindowStore } from '@/wm/window-store';
+import { useKernelStore } from '@/stores/kernel-store';
 import type { FileNode } from '@/vfs/types';
 
 interface ClipboardEntry {
@@ -76,8 +79,27 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
   const handleOpen = async (file: FileNode) => {
     if (file.type === 'folder') {
       navigate(`${currentPath === '/' ? '' : currentPath}/${file.name}`);
+      return;
     }
-    // File opening will be handled by app registry in later phases
+    // Find app for this file type
+    const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
+    const apps = kernel.apps.findByExtension(ext);
+    if (apps.length > 0) {
+      const appDef = apps[0];
+      const filePath = `${currentPath === '/' ? '' : currentPath}/${file.name}`;
+      const win = useWindowStore.getState().open({
+        processId: '',
+        appId: appDef.id,
+        title: file.name,
+        icon: appDef.icon,
+        bounds: appDef.defaultWindow
+          ? { width: appDef.defaultWindow.width, height: appDef.defaultWindow.height }
+          : undefined,
+      });
+      useKernelStore.getState().launchApp(appDef.id, win.id);
+      // Notify the app to open the file
+      window.dispatchEvent(new CustomEvent('webos:open-file', { detail: filePath }));
+    }
   };
 
   const handleNewFolder = async () => {
@@ -173,6 +195,16 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
     handleCloseContextMenu();
   };
 
+  const handleRename = async () => {
+    if (!contextMenu?.file) return;
+    const newName = prompt('New name:', contextMenu.file.name);
+    if (newName && newName !== contextMenu.file.name) {
+      await fileOps.renameItem(`${currentPath}/${contextMenu.file.name}`, newName);
+      loadDirectory(currentPath);
+    }
+    handleCloseContextMenu();
+  };
+
   return (
     <div
       className="flex flex-col h-full bg-[var(--os-bg-primary)]"
@@ -232,7 +264,7 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
               </button>
               <button
                 className="w-full text-left px-3 py-1.5 text-xs text-[var(--os-text-secondary)] hover:bg-[var(--os-menu-hover)]"
-                onClick={handleCloseContextMenu}
+                onClick={handleRename}
               >
                 Rename
               </button>

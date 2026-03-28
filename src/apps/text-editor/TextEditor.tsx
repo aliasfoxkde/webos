@@ -176,6 +176,18 @@ export function TextEditor() {
     }
   }, [createEditor]);
 
+  // Listen for file-open events from File Manager
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const filePath = (e as CustomEvent<string>).detail;
+      if (typeof filePath === 'string') {
+        openFile(filePath);
+      }
+    };
+    window.addEventListener('webos:open-file', handler);
+    return () => window.removeEventListener('webos:open-file', handler);
+  }, [openFile]);
+
   // Save file to VFS
   const saveFile = useCallback(async () => {
     if (!activeTabId) return;

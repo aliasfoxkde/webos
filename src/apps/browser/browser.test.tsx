@@ -5,11 +5,13 @@ import { Browser } from './Browser';
 vi.mock('./use-browser-history', () => ({
   useBrowserHistory: () => ({
     current: { url: 'about:blank', title: 'New Tab' },
+    history: [{ url: 'about:blank', title: 'New Tab' }],
     navigate: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
     canGoBack: false,
     canGoForward: false,
+    clearHistory: vi.fn(),
   }),
 }));
 
