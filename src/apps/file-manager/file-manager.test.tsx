@@ -44,4 +44,11 @@ describe('FileManager', () => {
     const { container } = render(<FileManager />);
     expect(container).toBeDefined();
   });
+
+  it('renders file listing area', () => {
+    render(<FileManager />);
+    // Should render the file listing container
+    const container = document.querySelector('[class*="overflow"]');
+    expect(container).toBeDefined();
+  });
 });

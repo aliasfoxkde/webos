@@ -17,6 +17,50 @@ export function Draw({ filePath }: DrawProps) {
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [currentPath, setCurrentPath] = useState(filePath ?? '');
   const [saved, setSaved] = useState(true);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
+  const isUndoRedoRef = useRef(false);
+
+  const pushHistory = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas || isUndoRedoRef.current) return;
+    const json = JSON.stringify(canvas.toJSON());
+    // Truncate any redo states
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    historyRef.current.push(json);
+    if (historyRef.current.length > 30) {
+      historyRef.current.shift();
+    }
+    historyIndexRef.current = historyRef.current.length - 1;
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(false);
+  }, []);
+
+  const undo = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas || historyIndexRef.current <= 0) return;
+    isUndoRedoRef.current = true;
+    historyIndexRef.current--;
+    const json = historyRef.current[historyIndexRef.current];
+    canvas.loadFromJSON(json).then(() => canvas.renderAll());
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(true);
+    isUndoRedoRef.current = false;
+  }, []);
+
+  const redo = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas || historyIndexRef.current >= historyRef.current.length - 1) return;
+    isUndoRedoRef.current = true;
+    historyIndexRef.current++;
+    const json = historyRef.current[historyIndexRef.current];
+    canvas.loadFromJSON(json).then(() => canvas.renderAll());
+    setCanUndo(true);
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+    isUndoRedoRef.current = false;
+  }, []);
 
   // Initialize canvas
   useEffect(() => {
@@ -31,7 +75,31 @@ export function Draw({ filePath }: DrawProps) {
 
     fabricRef.current = canvas;
 
+    // Initial history state
+    const initialJson = JSON.stringify(canvas.toJSON());
+    historyRef.current = [initialJson];
+    historyIndexRef.current = 0;
+
+    // Track changes for undo/redo
+    const onChange = () => pushHistory();
+    canvas.on('object:modified', onChange);
+    canvas.on('object:added', onChange);
+    canvas.on('object:removed', onChange);
+
+    // Keyboard shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') { e.preventDefault(); undo(); }
+        else if (e.key === 'y') { e.preventDefault(); redo(); }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
+      canvas.off('object:modified', onChange);
+      canvas.off('object:added', onChange);
+      canvas.off('object:removed', onChange);
+      window.removeEventListener('keydown', handleKeyDown);
       canvas.dispose();
       fabricRef.current = null;
     };
@@ -332,6 +400,7 @@ export function Draw({ filePath }: DrawProps) {
     if (fabricRef.current) fabricRef.current.backgroundColor = '#ffffff';
     fabricRef.current?.renderAll();
     setSaved(false);
+    pushHistory();
   };
 
   const tools: { id: DrawTool; label: string; icon: string }[] = [
@@ -400,6 +469,25 @@ export function Draw({ filePath }: DrawProps) {
         </label>
 
         <div className="w-px h-5 bg-[var(--os-border)] mx-1" />
+
+        <button
+          className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]"
+          onClick={undo}
+          disabled={!canUndo}
+          style={{ opacity: canUndo ? 1 : 0.4 }}
+          title="Undo (Ctrl+Z)"
+        >
+          ↩ Undo
+        </button>
+        <button
+          className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]"
+          onClick={redo}
+          disabled={!canRedo}
+          style={{ opacity: canRedo ? 1 : 0.4 }}
+          title="Redo (Ctrl+Y)"
+        >
+          ↪ Redo
+        </button>
 
         <button
           className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]"

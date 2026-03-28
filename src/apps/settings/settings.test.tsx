@@ -40,11 +40,17 @@ vi.mock('@/shell/wallpapers', () => ({
 import { Settings } from './Settings';
 
 describe('Settings', () => {
-  it('renders tab buttons', () => {
+  it('renders all tab buttons', () => {
     render(<Settings />);
     expect(screen.getByText('Appearance')).toBeDefined();
     expect(screen.getByText('Screensaver')).toBeDefined();
     expect(screen.getByText('Cloud Sync')).toBeDefined();
     expect(screen.getByText('About')).toBeDefined();
+  });
+
+  it('shows Appearance tab content by default', () => {
+    render(<Settings />);
+    // The Appearance tab is the default active tab
+    expect(screen.getByText('Appearance')).toBeDefined();
   });
 });

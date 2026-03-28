@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 // Mock canvas context for jsdom
 beforeAll(() => {
@@ -43,5 +43,23 @@ describe('Draw', () => {
   it('renders without crashing', () => {
     const { container } = render(<Draw />);
     expect(container).toBeDefined();
+  });
+
+  it('renders undo and redo buttons in toolbar', () => {
+    render(<Draw />);
+    expect(screen.getByTitle('Undo (Ctrl+Z)')).toBeDefined();
+    expect(screen.getByTitle('Redo (Ctrl+Y)')).toBeDefined();
+  });
+
+  it('renders color picker input', () => {
+    render(<Draw />);
+    const colorInput = document.querySelector('input[type="color"]') as HTMLInputElement;
+    expect(colorInput).toBeDefined();
+  });
+
+  it('renders canvas element', () => {
+    render(<Draw />);
+    const canvas = document.querySelector('canvas');
+    expect(canvas).toBeDefined();
   });
 });

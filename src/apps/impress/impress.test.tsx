@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 // Mock canvas context for jsdom
 beforeAll(() => {
@@ -43,5 +43,16 @@ describe('Impress', () => {
   it('renders without crashing', () => {
     const { container } = render(<Impress />);
     expect(container).toBeDefined();
+  });
+
+  it('renders New button in toolbar', () => {
+    render(<Impress />);
+    expect(screen.getByText('New')).toBeDefined();
+  });
+
+  it('renders canvas element for slide editing', () => {
+    render(<Impress />);
+    const canvas = document.querySelector('canvas');
+    expect(canvas).toBeDefined();
   });
 });

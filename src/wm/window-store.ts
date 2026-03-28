@@ -9,8 +9,39 @@ import type {
 import { DEFAULT_WINDOW_SIZE, MIN_WINDOW_SIZE, centerWindow } from './types';
 import { eventBus } from '@/kernel/event-bus';
 import { createLogger } from '@/lib/logger';
+import {
+  saveWindowStates,
+} from './window-state-persist';
+import type { PersistedWindowState } from './window-state-persist';
 
 const log = createLogger('wm');
+
+// Debounced persistence — saves at most once per 500ms
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleSave(windows: WindowState[]) {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const states: PersistedWindowState[] = windows.map((w) => ({
+      id: w.id,
+      appId: w.appId,
+      bounds: w.bounds,
+      isMaximized: w.isMaximized,
+    }));
+    saveWindowStates(states);
+  }, 500);
+}
+
+// Synchronous read for use during open()
+function loadWindowStatesSync(appId: string): PersistedWindowState | undefined {
+  try {
+    const data = localStorage.getItem('window-states');
+    if (!data) return undefined;
+    const states = JSON.parse(data) as PersistedWindowState[];
+    return states.find((s) => s.appId === appId);
+  } catch {
+    return undefined;
+  }
+}
 
 interface WindowStore {
   windows: WindowState[];
@@ -49,11 +80,25 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       width: window.innerWidth,
       height: window.innerHeight,
     };
-    const width = config.bounds?.width ?? DEFAULT_WINDOW_SIZE.width;
-    const height = config.bounds?.height ?? DEFAULT_WINDOW_SIZE.height;
-    const position = config.bounds
-      ? { x: config.bounds.x ?? 0, y: config.bounds.y ?? 0 }
-      : centerWindow({ width, height }, viewport);
+    let width = config.bounds?.width ?? DEFAULT_WINDOW_SIZE.width;
+    let height = config.bounds?.height ?? DEFAULT_WINDOW_SIZE.height;
+    let position: { x: number; y: number } | undefined;
+
+    // Restore saved bounds if available
+    if (!config.bounds) {
+      const saved = loadWindowStatesSync(config.appId);
+      if (saved) {
+        width = saved.bounds.width;
+        height = saved.bounds.height;
+        position = { x: saved.bounds.x, y: saved.bounds.y };
+      }
+    }
+
+    if (!position) {
+      position = config.bounds
+        ? { x: config.bounds.x ?? 0, y: config.bounds.y ?? 0 }
+        : centerWindow({ width, height }, viewport);
+    }
 
     const bounds: WindowBounds = { ...position, width, height };
     const zIndex = getNextZIndex();
@@ -108,6 +153,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     });
 
     eventBus.emit('window:close', { windowId });
+    scheduleSave(get().windows);
   },
 
   focus(windowId) {
@@ -219,6 +265,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     }));
 
     eventBus.emit('window:maximize', { windowId });
+    scheduleSave(get().windows);
   },
 
   snap(windowId, position, viewport) {
@@ -271,6 +318,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
           : w,
       ),
     }));
+    scheduleSave(get().windows);
   },
 
   move(windowId, position) {
@@ -281,6 +329,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
           : w,
       ),
     }));
+    scheduleSave(get().windows);
   },
 
   resize(windowId, size) {
@@ -291,6 +340,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
           : w,
       ),
     }));
+    scheduleSave(get().windows);
   },
 
   updateBounds(windowId, bounds) {

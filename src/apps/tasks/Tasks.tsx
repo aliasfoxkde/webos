@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNotificationStore } from '@/shell/notifications';
 
 interface Task {
   id: string;
   text: string;
   completed: boolean;
+  dueDate?: string; // YYYY-MM-DD
+  priority?: 'low' | 'medium' | 'high';
 }
 
 type Filter = 'all' | 'active' | 'completed';
@@ -34,6 +37,10 @@ export function Tasks() {
   const [tasks, setTasks] = useState<Task[]>(loadTasks);
   const [input, setInput] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [sortBy, setSortBy] = useState<'default' | 'priority' | 'dueDate'>('default');
+  const [showAddOptions, setShowAddOptions] = useState(false);
+  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [newDueDate, setNewDueDate] = useState('');
 
   useEffect(() => {
     saveTasks(tasks);
@@ -42,12 +49,19 @@ export function Tasks() {
   const addTask = useCallback(() => {
     const text = input.trim();
     if (!text) return;
-    setTasks((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), text, completed: false },
-    ]);
+    const task: Task = {
+      id: crypto.randomUUID(),
+      text,
+      completed: false,
+      priority: newPriority,
+    };
+    if (newDueDate) task.dueDate = newDueDate;
+    setTasks((prev) => [...prev, task]);
     setInput('');
-  }, [input]);
+    setNewDueDate('');
+    setNewPriority('medium');
+    setShowAddOptions(false);
+  }, [input, newPriority, newDueDate]);
 
   const toggleTask = useCallback((id: string) => {
     setTasks((prev) =>
@@ -59,11 +73,41 @@ export function Tasks() {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const filteredTasks = tasks.filter((t) => {
-    if (filter === 'active') return !t.completed;
-    if (filter === 'completed') return t.completed;
-    return true;
-  });
+  const today = new Date().toISOString().split('T')[0];
+
+  // Notify about overdue tasks on mount
+  useEffect(() => {
+    const overdue = loadTasks().filter(
+      (t) => t.dueDate && !t.completed && t.dueDate < today,
+    );
+    if (overdue.length > 0) {
+      useNotificationStore.getState().add({
+        type: 'warning',
+        title: `${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}`,
+        message: overdue.map((t) => t.text).join(', '),
+      });
+    }
+  }, []);
+
+  const filteredTasks = tasks
+    .filter((t) => {
+      if (filter === 'active') return !t.completed;
+      if (filter === 'completed') return t.completed;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'priority') {
+        const order = { high: 0, medium: 1, low: 2 };
+        return (order[a.priority ?? 'medium'] ?? 1) - (order[b.priority ?? 'medium'] ?? 1);
+      }
+      if (sortBy === 'dueDate') {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      return 0;
+    });
 
   const completedCount = tasks.filter((t) => t.completed).length;
 
@@ -101,6 +145,51 @@ export function Tasks() {
         </button>
       </div>
 
+      {/* Add options (priority + due date) */}
+      {showAddOptions && (
+        <div
+          className="flex items-center gap-3 border-b px-4 py-2"
+          style={{ borderColor: 'var(--os-border)', backgroundColor: 'var(--os-bg-secondary)' }}
+        >
+          <select
+            value={newPriority}
+            onChange={(e) => setNewPriority(e.target.value as 'low' | 'medium' | 'high')}
+            className="text-xs rounded border px-2 py-1 outline-none"
+            style={{ backgroundColor: 'var(--os-bg-tertiary)', borderColor: 'var(--os-border)', color: 'var(--os-text-primary)' }}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <input
+            type="date"
+            value={newDueDate}
+            onChange={(e) => setNewDueDate(e.target.value)}
+            className="text-xs rounded border px-2 py-1 outline-none"
+            style={{ backgroundColor: 'var(--os-bg-tertiary)', borderColor: 'var(--os-border)', color: 'var(--os-text-primary)' }}
+          />
+          <button
+            onClick={() => setShowAddOptions(false)}
+            className="text-xs px-2 py-1 rounded hover:bg-[var(--os-bg-hover)]"
+            style={{ color: 'var(--os-text-muted)' }}
+          >
+            Hide
+          </button>
+        </div>
+      )}
+
+      {!showAddOptions && (
+        <div className="px-4 py-1">
+          <button
+            onClick={() => setShowAddOptions(true)}
+            className="text-[10px] hover:underline cursor-pointer"
+            style={{ color: 'var(--os-text-muted)' }}
+          >
+            + Priority & Due Date
+          </button>
+        </div>
+      )}
+
       {/* Filter tabs + count */}
       <div
         className="flex items-center justify-between border-b px-4 py-2"
@@ -126,12 +215,24 @@ export function Tasks() {
             </button>
           ))}
         </div>
-        <span
-          className="text-xs"
-          style={{ color: 'var(--os-text-muted)' }}
-        >
-          {completedCount} of {tasks.length} completed
-        </span>
+        <div className="flex items-center gap-2">
+          <select
+            className="text-[10px] bg-transparent outline-none cursor-pointer"
+            style={{ color: 'var(--os-text-muted)' }}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'default' | 'priority' | 'dueDate')}
+          >
+            <option value="default">Sort</option>
+            <option value="priority">Priority</option>
+            <option value="dueDate">Due Date</option>
+          </select>
+          <span
+            className="text-xs"
+            style={{ color: 'var(--os-text-muted)' }}
+          >
+            {completedCount} of {tasks.length} completed
+          </span>
+        </div>
       </div>
 
       {/* Task list */}
@@ -155,12 +256,15 @@ export function Tasks() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredTasks.map((task) => (
+            {filteredTasks.map((task) => {
+              const isOverdue = task.dueDate && !task.completed && task.dueDate < today;
+              const priorityColor = task.priority === 'high' ? 'var(--os-error)' : task.priority === 'low' ? 'var(--os-accent)' : 'var(--os-text-muted)';
+              return (
               <div
                 key={task.id}
                 className="flex items-center gap-3 rounded-lg border px-3 py-2.5"
                 style={{
-                  borderColor: 'var(--os-border)',
+                  borderColor: isOverdue ? 'var(--os-error)' : 'var(--os-border)',
                   backgroundColor: 'var(--os-bg-secondary)',
                 }}
               >
@@ -202,6 +306,19 @@ export function Tasks() {
                   {task.text}
                 </span>
 
+                {task.priority && (
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: priorityColor }} title={`${task.priority} priority`} />
+                )}
+
+                {task.dueDate && (
+                  <span
+                    className="text-[10px] shrink-0"
+                    style={{ color: isOverdue ? 'var(--os-error)' : 'var(--os-text-muted)' }}
+                  >
+                    {task.dueDate}
+                  </span>
+                )}
+
                 <button
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors cursor-pointer"
                   style={{
@@ -228,7 +345,8 @@ export function Tasks() {
                   </svg>
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

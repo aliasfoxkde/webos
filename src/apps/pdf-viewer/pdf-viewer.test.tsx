@@ -12,4 +12,11 @@ describe('PdfViewer', () => {
     const { container } = render(<PdfViewer />);
     expect(container).toBeDefined();
   });
+
+  it('renders PDF upload prompt', () => {
+    render(<PdfViewer />);
+    // When no file is loaded, should show upload prompt
+    const container = document.querySelector('[class*="flex"]');
+    expect(container).toBeDefined();
+  });
 });

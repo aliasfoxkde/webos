@@ -20,6 +20,11 @@ export function Notes() {
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredNotes = searchQuery
+    ? notes.filter((n) => n.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : notes;
 
   const editor = useEditor({
     extensions: [
@@ -122,8 +127,18 @@ export function Notes() {
             +
           </button>
         </div>
+        <div className="px-2 py-1.5 border-b border-[var(--os-border)]">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search notes..."
+            className="w-full rounded border px-2 py-1 text-[11px] outline-none"
+            style={{ backgroundColor: 'var(--os-bg-tertiary)', borderColor: 'var(--os-border)', color: 'var(--os-text-primary)' }}
+          />
+        </div>
         <div className="flex-1 overflow-y-auto">
-          {notes.map((note) => (
+          {filteredNotes.map((note) => (
             <div
               key={note.path}
               className={`group flex items-center justify-between px-3 py-2 cursor-pointer transition-colors ${
@@ -145,7 +160,7 @@ export function Notes() {
               </button>
             </div>
           ))}
-          {notes.length === 0 && (
+          {filteredNotes.length === 0 && (
             <p className="text-xs text-[var(--os-text-muted)] text-center py-4">
               No notes yet
             </p>

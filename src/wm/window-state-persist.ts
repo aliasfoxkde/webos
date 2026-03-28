@@ -1,6 +1,6 @@
 import type { WindowBounds } from './types';
 
-interface PersistedWindowState {
+export interface PersistedWindowState {
   id: string;
   appId: string;
   bounds: WindowBounds;

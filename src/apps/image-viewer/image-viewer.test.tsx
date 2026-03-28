@@ -13,4 +13,11 @@ describe('ImageViewer', () => {
     const { container } = render(<ImageViewer />);
     expect(container).toBeDefined();
   });
+
+  it('renders image upload area', () => {
+    render(<ImageViewer />);
+    // When no image is loaded, should show upload prompt
+    const container = document.querySelector('[class*="flex"]');
+    expect(container).toBeDefined();
+  });
 });

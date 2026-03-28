@@ -50,6 +50,10 @@ export function TextEditor() {
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showOpenDialog, setShowOpenDialog] = useState(false);
+  const [showFindReplace, setShowFindReplace] = useState(false);
+  const [findText, setFindText] = useState('');
+  const [replaceText, setReplaceText] = useState('');
+  const [findCount, setFindCount] = useState(0);
   const [savePath, setSavePath] = useState('');
   const [openPath, setOpenPath] = useState('');
   const [statusMessage, setStatusMessage] = useState('Ready');
@@ -299,7 +303,7 @@ export function TextEditor() {
     }
   }, []);
 
-  // Keyboard shortcut: Ctrl+S to save, Ctrl+O to open, Ctrl+N for new
+  // Keyboard shortcut: Ctrl+S to save, Ctrl+O to open, Ctrl+N for new, Ctrl+F to find
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -312,11 +316,88 @@ export function TextEditor() {
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
         newFile();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowFindReplace(true);
+      } else if (e.key === 'Escape') {
+        setShowFindReplace(false);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [saveFile, newFile, listFiles]);
+
+  // Find next occurrence in editor
+  const findNext = useCallback(() => {
+    const view = editorViewRef.current;
+    if (!view || !findText) { setFindCount(0); return; }
+    const content = view.state.doc.toString();
+    const pos = view.state.selection.main.head;
+    const idx = content.indexOf(findText, pos);
+    if (idx >= 0) {
+      view.dispatch({ selection: { anchor: idx, head: idx + findText.length } });
+      view.focus();
+    } else {
+      // Wrap around
+      const idx2 = content.indexOf(findText);
+      if (idx2 >= 0) {
+        view.dispatch({ selection: { anchor: idx2, head: idx2 + findText.length } });
+        view.focus();
+      }
+    }
+    // Count occurrences
+    const count = content.split(findText).length - 1;
+    setFindCount(count);
+  }, [findText]);
+
+  const findPrev = useCallback(() => {
+    const view = editorViewRef.current;
+    if (!view || !findText) return;
+    const content = view.state.doc.toString();
+    const pos = view.state.selection.main.head - 1;
+    const idx = content.lastIndexOf(findText, pos);
+    if (idx >= 0) {
+      view.dispatch({ selection: { anchor: idx, head: idx + findText.length } });
+      view.focus();
+    } else {
+      const idx2 = content.lastIndexOf(findText);
+      if (idx2 >= 0) {
+        view.dispatch({ selection: { anchor: idx2, head: idx2 + findText.length } });
+        view.focus();
+      }
+    }
+  }, [findText]);
+
+  const replaceCurrent = useCallback(() => {
+    const view = editorViewRef.current;
+    if (!view || !findText) return;
+    const { from, to } = view.state.selection.main;
+    const selected = view.state.sliceDoc(from, to);
+    if (selected === findText) {
+      view.dispatch({ changes: { from, to, insert: replaceText } });
+    }
+    findNext();
+  }, [findText, replaceText, findNext]);
+
+  const replaceAll = useCallback(() => {
+    const view = editorViewRef.current;
+    if (!view || !findText) return;
+    const content = view.state.doc.toString();
+    const newContent = content.split(findText).join(replaceText);
+    if (newContent !== content) {
+      view.dispatch({ changes: { from: 0, to: content.length, insert: newContent } });
+      setFindCount(0);
+    }
+  }, [findText, replaceText]);
+
+  // Update find count when findText changes
+  useEffect(() => {
+    if (!findText) { setFindCount(0); return; }
+    const view = editorViewRef.current;
+    if (!view) return;
+    const content = view.state.doc.toString();
+    setFindCount(content.split(findText).length - 1);
+  }, [findText]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
@@ -400,6 +481,45 @@ export function TextEditor() {
 
       {/* Editor area */}
       <div ref={editorContainerRef} className="flex-1 overflow-hidden" />
+
+      {/* Find/Replace bar */}
+      {showFindReplace && (
+        <div
+          className="flex items-center gap-2 border-t px-3 py-1.5"
+          style={{
+            backgroundColor: 'var(--os-bg-secondary)',
+            borderColor: 'var(--os-border)',
+          }}
+        >
+          <input
+            type="text"
+            value={findText}
+            onChange={(e) => setFindText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') findNext(); if (e.key === 'Escape') setShowFindReplace(false); }}
+            placeholder="Find..."
+            className="rounded border px-2 py-1 text-xs outline-none w-40"
+            style={{ backgroundColor: 'var(--os-bg-primary)', borderColor: 'var(--os-border)', color: 'var(--os-text-primary)' }}
+            autoFocus
+          />
+          <span className="text-[10px] shrink-0" style={{ color: 'var(--os-text-muted)' }}>
+            {findCount > 0 ? `${findCount} found` : findText ? '0 found' : ''}
+          </span>
+          <button onClick={findPrev} className="rounded px-1.5 py-1 text-[10px] hover:bg-[var(--os-bg-hover)]" style={{ color: 'var(--os-text-secondary)' }} title="Previous (Shift+Enter)">Prev</button>
+          <button onClick={findNext} className="rounded px-1.5 py-1 text-[10px] hover:bg-[var(--os-bg-hover)]" style={{ color: 'var(--os-text-secondary)' }} title="Next (Enter)">Next</button>
+          <div className="w-px h-4 bg-[var(--os-border)]" />
+          <input
+            type="text"
+            value={replaceText}
+            onChange={(e) => setReplaceText(e.target.value)}
+            placeholder="Replace..."
+            className="rounded border px-2 py-1 text-xs outline-none w-36"
+            style={{ backgroundColor: 'var(--os-bg-primary)', borderColor: 'var(--os-border)', color: 'var(--os-text-primary)' }}
+          />
+          <button onClick={replaceCurrent} className="rounded px-1.5 py-1 text-[10px] hover:bg-[var(--os-bg-hover)]" style={{ color: 'var(--os-text-secondary)' }}>Replace</button>
+          <button onClick={replaceAll} className="rounded px-1.5 py-1 text-[10px] hover:bg-[var(--os-bg-hover)]" style={{ color: 'var(--os-text-secondary)' }}>All</button>
+          <button onClick={() => setShowFindReplace(false)} className="rounded px-1.5 py-1 text-[10px] hover:bg-[var(--os-bg-hover)]" style={{ color: 'var(--os-text-muted)' }}>Close</button>
+        </div>
+      )}
 
       {/* Status bar */}
       <div

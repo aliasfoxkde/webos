@@ -5,6 +5,7 @@ import {
   isToday,
   formatMonthYear,
 } from './calendar-utils';
+import { useNotificationStore } from '@/shell/notifications';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -44,6 +45,19 @@ export function Calendar() {
   useEffect(() => {
     persistEvents(events);
   }, [events]);
+
+  // Notify about today's events on mount
+  useEffect(() => {
+    const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+    const todaysEvents = loadEvents().filter((e) => e.date === todayKey);
+    if (todaysEvents.length > 0) {
+      useNotificationStore.getState().add({
+        type: 'info',
+        title: `You have ${todaysEvents.length} event${todaysEvents.length > 1 ? 's' : ''} today`,
+        message: todaysEvents.map((e) => e.title).join(', '),
+      });
+    }
+  }, []);
 
   const goToPrevMonth = useCallback(() => {
     if (month === 0) {
