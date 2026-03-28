@@ -18,6 +18,13 @@ export interface CityWeather {
   forecast: DayForecast[];
 }
 
+export interface CityInfo {
+  city: string;
+  country: string;
+  lat: number;
+  lon: number;
+}
+
 const CONDITION_ICONS: Record<WeatherCondition, string> = {
   'sunny': '\u2600\uFE0F',
   'partly-cloudy': '\u26C5',
@@ -61,101 +68,96 @@ export function getBackgroundGradient(condition: WeatherCondition): string {
   }
 }
 
-export const CITIES: CityWeather[] = [
-  {
-    city: 'San Francisco',
-    country: 'US',
-    temperature: 18,
-    feelsLike: 16,
-    condition: 'partly-cloudy',
-    humidity: 72,
-    wind: 19,
-    forecast: [
-      { day: 'Mon', high: 19, low: 13, condition: 'partly-cloudy' },
-      { day: 'Tue', high: 21, low: 14, condition: 'sunny' },
-      { day: 'Wed', high: 17, low: 12, condition: 'cloudy' },
-      { day: 'Thu', high: 15, low: 11, condition: 'rainy' },
-      { day: 'Fri', high: 18, low: 13, condition: 'partly-cloudy' },
-    ],
-  },
-  {
-    city: 'Tokyo',
-    country: 'JP',
-    temperature: 24,
-    feelsLike: 26,
-    condition: 'cloudy',
-    humidity: 65,
-    wind: 12,
-    forecast: [
-      { day: 'Mon', high: 25, low: 19, condition: 'cloudy' },
-      { day: 'Tue', high: 23, low: 18, condition: 'rainy' },
-      { day: 'Wed', high: 22, low: 17, condition: 'rainy' },
-      { day: 'Thu', high: 26, low: 20, condition: 'partly-cloudy' },
-      { day: 'Fri', high: 27, low: 21, condition: 'sunny' },
-    ],
-  },
-  {
-    city: 'London',
-    country: 'GB',
-    temperature: 12,
-    feelsLike: 9,
-    condition: 'rainy',
-    humidity: 85,
-    wind: 24,
-    forecast: [
-      { day: 'Mon', high: 13, low: 7, condition: 'rainy' },
-      { day: 'Tue', high: 11, low: 6, condition: 'stormy' },
-      { day: 'Wed', high: 10, low: 5, condition: 'cloudy' },
-      { day: 'Thu', high: 12, low: 7, condition: 'partly-cloudy' },
-      { day: 'Fri', high: 14, low: 8, condition: 'partly-cloudy' },
-    ],
-  },
-  {
-    city: 'New York',
-    country: 'US',
-    temperature: 22,
-    feelsLike: 23,
-    condition: 'sunny',
-    humidity: 55,
-    wind: 14,
-    forecast: [
-      { day: 'Mon', high: 24, low: 18, condition: 'sunny' },
-      { day: 'Tue', high: 25, low: 19, condition: 'sunny' },
-      { day: 'Wed', high: 23, low: 17, condition: 'partly-cloudy' },
-      { day: 'Thu', high: 20, low: 15, condition: 'cloudy' },
-      { day: 'Fri', high: 21, low: 16, condition: 'partly-cloudy' },
-    ],
-  },
-  {
-    city: 'Sydney',
-    country: 'AU',
-    temperature: 28,
-    feelsLike: 30,
-    condition: 'sunny',
-    humidity: 48,
-    wind: 16,
-    forecast: [
-      { day: 'Mon', high: 29, low: 22, condition: 'sunny' },
-      { day: 'Tue', high: 30, low: 23, condition: 'sunny' },
-      { day: 'Wed', high: 27, low: 21, condition: 'partly-cloudy' },
-      { day: 'Thu', high: 26, low: 20, condition: 'rainy' },
-      { day: 'Fri', high: 28, low: 22, condition: 'partly-cloudy' },
-    ],
-  },
-  {
-    city: 'Reykjavik',
-    country: 'IS',
-    temperature: 2,
-    feelsLike: -3,
-    condition: 'snowy',
-    humidity: 78,
-    wind: 32,
-    forecast: [
-      { day: 'Mon', high: 3, low: -2, condition: 'snowy' },
-      { day: 'Tue', high: 1, low: -4, condition: 'snowy' },
-      { day: 'Wed', high: 2, low: -3, condition: 'cloudy' },
-      { day: 'Thu', high: 4, low: -1, condition: 'partly-cloudy' },
-      { day: 'Fri', high: 3, low: -2, condition: 'snowy' },
-    ],
-  },
+export const CITIES: CityInfo[] = [
+  { city: 'San Francisco', country: 'US', lat: 37.77, lon: -122.42 },
+  { city: 'Tokyo', country: 'JP', lat: 35.68, lon: 139.69 },
+  { city: 'London', country: 'GB', lat: 51.51, lon: -0.13 },
+  { city: 'New York', country: 'US', lat: 40.71, lon: -74.01 },
+  { city: 'Sydney', country: 'AU', lat: -33.87, lon: 151.21 },
+  { city: 'Reykjavik', country: 'IS', lat: 64.15, lon: -21.94 },
 ];
+
+const WMO_TO_CONDITION: Record<number, WeatherCondition> = {
+  0: 'sunny',
+  1: 'partly-cloudy',
+  2: 'partly-cloudy',
+  3: 'cloudy',
+  45: 'cloudy',
+  48: 'cloudy',
+  51: 'rainy',
+  53: 'rainy',
+  55: 'rainy',
+  56: 'rainy',
+  57: 'rainy',
+  61: 'rainy',
+  63: 'rainy',
+ 65: 'rainy',
+ 66: 'rainy',
+ 67: 'rainy',
+ 71: 'snowy',
+ 73: 'snowy',
+ 75: 'snowy',
+ 77: 'snowy',
+ 80: 'rainy',
+ 81: 'rainy',
+ 82: 'stormy',
+ 85: 'stormy',
+ 86: 'snowy',
+ 95: 'stormy',
+ 96: 'stormy',
+ 99: 'stormy',
+};
+
+function wmoToCondition(code: number): WeatherCondition {
+  return WMO_TO_CONDITION[code] ?? 'cloudy';
+}
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+interface OpenMeteoResponse {
+  current: {
+    temperature_2m: number;
+    relative_humidity_2m: number;
+    apparent_temperature: number;
+    weather_code: number;
+    wind_speed_10m: number;
+  };
+  daily: {
+    time: string[];
+    weather_code: number[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+  };
+}
+
+export async function fetchWeather(info: CityInfo): Promise<CityWeather> {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${info.lat}&longitude=${info.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Weather API error: ${res.status}`);
+
+  const data: OpenMeteoResponse = await res.json();
+
+  const condition = wmoToCondition(data.current.weather_code);
+
+  const forecast: DayForecast[] = data.daily.time.slice(0, 5).map((dateStr, i) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    return {
+      day: DAY_NAMES[d.getDay()],
+      high: Math.round(data.daily.temperature_2m_max[i]),
+      low: Math.round(data.daily.temperature_2m_min[i]),
+      condition: wmoToCondition(data.daily.weather_code[i]),
+    };
+  });
+
+  return {
+    city: info.city,
+    country: info.country,
+    temperature: Math.round(data.current.temperature_2m),
+    feelsLike: Math.round(data.current.apparent_temperature),
+    condition,
+    humidity: data.current.relative_humidity_2m,
+    wind: Math.round(data.current.wind_speed_10m),
+    forecast,
+  };
+}

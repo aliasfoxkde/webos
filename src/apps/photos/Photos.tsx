@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface Photo {
   id: string;
   name: string;
-  /** Placeholder color so the grid looks populated */
   color: string;
+  url?: string;
 }
 
 const PLACEHOLDER_PHOTOS: Photo[] = [
@@ -24,6 +24,14 @@ const GRID_COLORS = [
 export function Photos() {
   const [photos, setPhotos] = useState<Photo[]>(PLACEHOLDER_PHOTOS);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlsRef = useRef<string[]>([]);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -33,15 +41,31 @@ export function Photos() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const newPhotos: Photo[] = Array.from(files).map((file, i) => ({
-      id: crypto.randomUUID(),
-      name: file.name,
-      color: GRID_COLORS[(photos.length + i) % GRID_COLORS.length],
-    }));
+    const newPhotos: Photo[] = Array.from(files).map((file, i) => {
+      const url = URL.createObjectURL(file);
+      objectUrlsRef.current.push(url);
+      return {
+        id: crypto.randomUUID(),
+        name: file.name,
+        color: GRID_COLORS[(photos.length + i) % GRID_COLORS.length],
+        url,
+      };
+    });
 
     setPhotos((prev) => [...prev, ...newPhotos]);
     // Reset input so the same file can be selected again
     e.target.value = '';
+  };
+
+  const handleDelete = (id: string) => {
+    setPhotos((prev) => {
+      const photo = prev.find((p) => p.id === id);
+      if (photo?.url) {
+        URL.revokeObjectURL(photo.url);
+        objectUrlsRef.current = objectUrlsRef.current.filter((u) => u !== photo.url);
+      }
+      return prev.filter((p) => p.id !== id);
+    });
   };
 
   return (
@@ -118,45 +142,58 @@ export function Photos() {
               <div
                 key={photo.id}
                 className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                style={{
-                  backgroundColor: photo.color,
-                }}
               >
-                {/* Placeholder gradient */}
-                <div
-                  className="absolute inset-0 opacity-20"
-                  style={{
-                    background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)`,
-                  }}
-                />
-                {/* Image icon overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="opacity-40"
-                  >
-                    <rect
-                      x="3"
-                      y="3"
-                      width="18"
-                      height="18"
-                      rx="2"
-                      stroke="white"
-                      strokeWidth="1.5"
-                    />
-                    <circle cx="8.5" cy="8.5" r="1.5" fill="white" />
-                    <path
-                      d="M21 15L16 10L5 21"
-                      stroke="white"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+                {photo.url ? (
+                  <img
+                    src={photo.url}
+                    alt={photo.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0"
+                    style={{ backgroundColor: photo.color }}
+                  />
+                )}
+                {/* Placeholder gradient for non-image photos */}
+                {!photo.url && (
+                  <div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                      background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)`,
+                    }}
+                  />
+                )}
+                {/* Image icon overlay for non-image photos */}
+                {!photo.url && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="opacity-40"
+                    >
+                      <rect
+                        x="3"
+                        y="3"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        stroke="white"
+                        strokeWidth="1.5"
+                      />
+                      <circle cx="8.5" cy="8.5" r="1.5" fill="white" />
+                      <path
+                        d="M21 15L16 10L5 21"
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                )}
                 {/* Name label on hover */}
                 <div
                   className="absolute bottom-0 left-0 right-0 px-2 py-1.5 text-xs font-medium truncate transition-opacity opacity-0 group-hover:opacity-100"
@@ -167,6 +204,17 @@ export function Photos() {
                 >
                   {photo.name}
                 </div>
+                {/* Delete button on hover */}
+                <button
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white transition-opacity opacity-0 group-hover:opacity-100"
+                  style={{ backgroundColor: 'rgba(239,68,68,0.8)' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(photo.id);
+                  }}
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>

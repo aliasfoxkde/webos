@@ -9,6 +9,7 @@ import {
   formatCellValue,
   exportToCSV,
 } from './engine';
+import { writeFile, readFile } from '@/vfs/vfs';
 
 const DEFAULT_ROWS = 100;
 const DEFAULT_COLS = 26;
@@ -18,8 +19,15 @@ const HEADER_WIDTH = 40;
 const ROW_HEADER_WIDTH = 50;
 const SCROLL_THRESHOLD = 20;
 
-export function Calc() {
+interface CalcProps {
+  filePath?: string;
+  onTitleChange?: (title: string) => void;
+}
+
+export function Calc({ filePath, onTitleChange }: CalcProps) {
   const [sheetData, setSheetData] = useState<SheetData>({});
+  const [currentPath, setCurrentPath] = useState(filePath ?? '');
+  const [saved, setSaved] = useState(true);
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
   const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -134,6 +142,85 @@ export function Calc() {
   const startCol = Math.max(0, Math.floor(scrollOffset.left / CELL_WIDTH) - 2);
   const endCol = Math.min(DEFAULT_COLS, startCol + visibleCols + 4);
 
+  // Load file if path provided
+  useEffect(() => {
+    if (filePath) {
+      readFile(filePath).then((file) => {
+        if (file && typeof file.content === 'string' && file.content) {
+          try {
+            setSheetData(JSON.parse(file.content));
+          } catch {
+            // Not valid JSON, ignore
+          }
+        }
+      });
+      setCurrentPath(filePath);
+      setSaved(true);
+    }
+  }, [filePath]);
+
+  // Listen for file open events from File Manager
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent<string>).detail;
+      if (typeof path === 'string') {
+        setCurrentPath(path);
+        setSaved(true);
+        readFile(path).then((file) => {
+          if (file && typeof file.content === 'string' && file.content) {
+            try {
+              setSheetData(JSON.parse(file.content));
+            } catch {
+              // Not valid JSON, ignore
+            }
+          }
+        });
+      }
+    };
+    window.addEventListener('webos:open-file', handler);
+    return () => window.removeEventListener('webos:open-file', handler);
+  }, []);
+
+  // Auto-save every 5 seconds
+  useEffect(() => {
+    if (!currentPath) return;
+    const timer = setInterval(() => {
+      if (!saved && currentPath) {
+        saveFile();
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath, saved]);
+
+  const saveFile = useCallback(async () => {
+    if (!currentPath) return;
+    await writeFile(currentPath, JSON.stringify(sheetData), 'application/json');
+    setSaved(true);
+  }, [currentPath, sheetData]);
+
+  const handleNew = () => {
+    setSheetData({});
+    setCurrentPath('');
+    setSaved(true);
+    onTitleChange?.('Calc');
+  };
+
+  const handleSave = () => {
+    if (currentPath) {
+      saveFile();
+    } else {
+      const name = prompt('Save as:', 'Untitled.json');
+      if (name) {
+        const path = `/home/Documents/${name}`;
+        setCurrentPath(path);
+        writeFile(path, JSON.stringify(sheetData), 'application/json');
+        setSaved(true);
+        onTitleChange?.(name);
+      }
+    }
+  };
+
   const handleExportCSV = () => {
     const csv = exportToCSV(sheetData);
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -145,16 +232,35 @@ export function Calc() {
     URL.revokeObjectURL(url);
   };
 
+  // Mark unsaved on data change
+  useEffect(() => {
+    setSaved(false);
+  }, [sheetData]);
+
   return (
     <div className="flex flex-col h-full bg-[var(--os-bg-primary)]" onKeyDown={handleKeyDown} tabIndex={0}>
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-2 py-1 border-b border-[var(--os-border)] bg-[var(--os-bg-secondary)]">
         <button
           className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]"
+          onClick={handleNew}
+        >
+          New
+        </button>
+        <button
+          className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]"
+          onClick={handleSave}
+        >
+          Save
+        </button>
+        <button
+          className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]"
           onClick={handleExportCSV}
         >
           Export CSV
         </button>
+        {!saved && <span className="text-[10px] text-[var(--os-accent)] ml-1">Unsaved</span>}
+        {currentPath && <span className="text-[10px] text-[var(--os-text-muted)] ml-1 truncate max-w-[200px]">{currentPath.split('/').pop()}</span>}
       </div>
 
       {/* Formula Bar */}

@@ -38,7 +38,7 @@ export function registerBuiltinApps(): void {
       permissions: ['filesystem:read', 'filesystem:write'],
       singleton: false,
       systemApp: true,
-      fileAssociations: ['text/csv'],
+      fileAssociations: ['text/csv', 'application/json'],
     },
     {
       id: 'notes',
