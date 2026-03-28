@@ -15,7 +15,7 @@ interface DesktopLayoutState {
 }
 
 function getDefaultPositions(): Record<string, { x: number; y: number }> {
-  const apps = getAppList().slice(0, 8);
+  const apps = getAppList();
   const positions: Record<string, { x: number; y: number }> = {};
   apps.forEach((app, i) => {
     const col = i % COLUMNS;

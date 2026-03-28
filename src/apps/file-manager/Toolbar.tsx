@@ -9,6 +9,8 @@ interface ToolbarProps {
   onRefresh: () => void;
   onNewFolder: () => void;
   onNewFile: () => void;
+  hasClipboard?: boolean;
+  onPaste?: () => void;
 }
 
 export function Toolbar({
@@ -20,6 +22,8 @@ export function Toolbar({
   onRefresh,
   onNewFolder,
   onNewFile,
+  hasClipboard,
+  onPaste,
 }: ToolbarProps) {
   return (
     <div className="flex items-center gap-1 px-2 py-1 border-b border-[var(--os-border)] bg-[var(--os-bg-secondary)]">
@@ -49,6 +53,15 @@ export function Toolbar({
 
       <div className="flex-1" />
 
+      {hasClipboard && onPaste && (
+        <button
+          className="w-7 h-7 flex items-center justify-center rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)] text-sm"
+          onClick={onPaste}
+          title="Paste"
+        >
+          📋
+        </button>
+      )}
       <button
         className="w-7 h-7 flex items-center justify-center rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)] text-sm"
         onClick={onNewFolder}

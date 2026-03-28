@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import type { FileNode } from '@/vfs/types';
 
 interface FileGridProps {
@@ -46,16 +46,61 @@ function formatSize(size: number): string {
 }
 
 export function FileGrid({ files, onOpen, onContextMenu }: FileGridProps) {
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const lastClickedRef = useRef<string | null>(null);
+
+  const visibleFiles = files.filter((f) => !f.isHidden || f.name === '.');
+
+  const handleClick = (e: React.MouseEvent, file: FileNode) => {
+    if (e.ctrlKey || e.metaKey) {
+      // Toggle selection
+      setSelectedFiles((prev) => {
+        const next = new Set(prev);
+        if (next.has(file.id)) {
+          next.delete(file.id);
+        } else {
+          next.add(file.id);
+        }
+        return next;
+      });
+      lastClickedRef.current = file.id;
+    } else if (e.shiftKey && lastClickedRef.current) {
+      // Range select
+      const ids = visibleFiles.map((f) => f.id);
+      const lastIdx = ids.indexOf(lastClickedRef.current);
+      const curIdx = ids.indexOf(file.id);
+      if (lastIdx >= 0 && curIdx >= 0) {
+        const [start, end] = [Math.min(lastIdx, curIdx), Math.max(lastIdx, curIdx)];
+        const rangeIds = ids.slice(start, end + 1);
+        setSelectedFiles(new Set(rangeIds));
+      }
+    } else {
+      // Single click — clear other selections
+      setSelectedFiles(new Set([file.id]));
+      lastClickedRef.current = file.id;
+    }
+  };
+
+  const handleDoubleClick = (file: FileNode) => {
+    setSelectedFiles(new Set());
+    onOpen(file);
+  };
+
   return (
-    <div className="flex-1 p-3 overflow-y-auto">
+    <div className="flex-1 p-3 overflow-y-auto" onClick={() => setSelectedFiles(new Set())}>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
-        {files
-          .filter((f) => !f.isHidden || f.name === '.')
-          .map((file) => (
+        {visibleFiles.map((file) => {
+          const isSelected = selectedFiles.has(file.id);
+          return (
             <button
               key={file.id}
-              className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-[var(--os-bg-hover)] transition-colors min-h-[80px]"
-              onDoubleClick={() => onOpen(file)}
+              className={`flex flex-col items-center justify-center p-2 rounded-lg transition-colors min-h-[80px] ${
+                isSelected
+                  ? 'bg-[var(--os-accent)] bg-opacity-20 ring-1 ring-[var(--os-accent)]'
+                  : 'hover:bg-[var(--os-bg-hover)]'
+              }`}
+              onClick={(e) => handleClick(e, file)}
+              onDoubleClick={() => handleDoubleClick(file)}
               onContextMenu={(e) => onContextMenu(e, file)}
             >
               <span className="text-3xl mb-1">{getFileIcon(file)}</span>
@@ -68,9 +113,10 @@ export function FileGrid({ files, onOpen, onContextMenu }: FileGridProps) {
                 </span>
               )}
             </button>
-          ))}
+          );
+        })}
       </div>
-      {files.filter((f) => !f.isHidden).length === 0 && (
+      {visibleFiles.length === 0 && (
         <div className="flex items-center justify-center h-full text-sm text-[var(--os-text-muted)]">
           This folder is empty
         </div>

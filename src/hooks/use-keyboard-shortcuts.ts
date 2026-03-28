@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useWindowStore } from '@/wm/window-store';
+import { useKernelStore } from '@/stores/kernel-store';
+import { kernel } from '@/kernel/kernel';
 
 interface ShortcutConfig {
   key: string;
@@ -62,7 +64,18 @@ export function useKeyboardShortcuts(shortcuts?: ShortcutConfig[]) {
           ctrl: true,
           shift: true,
           action: () => {
-            // Could open task manager
+            const appDef = kernel.apps.get('task-manager');
+            if (!appDef) return;
+            const win = useWindowStore.getState().open({
+              processId: '',
+              appId: 'task-manager',
+              title: appDef.title ?? 'Task Manager',
+              icon: appDef.icon,
+              bounds: appDef.defaultWindow
+                ? { width: appDef.defaultWindow.width, height: appDef.defaultWindow.height }
+                : undefined,
+            });
+            useKernelStore.getState().launchApp('task-manager', win.id);
           },
           description: 'Open task manager',
         },

@@ -247,6 +247,26 @@ export function registerBuiltinApps(): void {
       singleton: false,
       systemApp: true,
     },
+    {
+      id: 'camera',
+      title: 'Camera',
+      description: 'Webcam capture',
+      icon: '📷',
+      defaultWindow: { width: 640, height: 520, minWidth: 400, minHeight: 300 },
+      permissions: [],
+      singleton: true,
+      systemApp: true,
+    },
+    {
+      id: 'system-monitor',
+      title: 'System Monitor',
+      description: 'System performance and processes',
+      icon: '📊',
+      defaultWindow: { width: 650, height: 500, minWidth: 400, minHeight: 300 },
+      permissions: [],
+      singleton: false,
+      systemApp: true,
+    },
   ];
 
   for (const app of apps) {

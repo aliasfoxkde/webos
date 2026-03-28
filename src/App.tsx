@@ -40,6 +40,8 @@ const MusicPlayer = lazy(() => import('@/apps/music-player').then((m) => ({ defa
 const Trash = lazy(() => import('@/apps/trash').then((m) => ({ default: m.Trash })));
 const Welcome = lazy(() => import('@/apps/welcome').then((m) => ({ default: m.Welcome })));
 const VoiceRecorder = lazy(() => import('@/apps/voice-recorder').then((m) => ({ default: m.VoiceRecorder })));
+const Camera = lazy(() => import('@/apps/camera').then((m) => ({ default: m.Camera })));
+const SystemMonitor = lazy(() => import('@/apps/system-monitor').then((m) => ({ default: m.SystemMonitor })));
 
 function renderAppContent(_windowId: string, appId: string) {
   return (
@@ -93,6 +95,10 @@ function renderAppContent(_windowId: string, appId: string) {
             return <Welcome />;
           case 'voice-recorder':
             return <VoiceRecorder />;
+          case 'camera':
+            return <Camera />;
+          case 'system-monitor':
+            return <SystemMonitor />;
           default:
             return (
               <div className="flex items-center justify-center h-full text-[var(--os-text-secondary)]">

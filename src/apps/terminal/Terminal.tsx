@@ -5,6 +5,8 @@ import {
   readFile,
   mkdir,
   rm,
+  cp,
+  mv,
   stat,
   exists,
 } from '@/vfs/vfs';
@@ -44,6 +46,8 @@ const HELP_TEXT = `Available commands:
   pwd               Print working directory
   cat <file>        Display file contents
   mkdir <path>      Create directory
+  cp <src> <dest>   Copy file or directory
+  mv <src> <dest>   Move/rename file or directory
   rm <path>         Remove file or directory
   touch <file>      Create empty file
   echo <text>       Print text
@@ -197,6 +201,36 @@ export default function Terminal() {
               addError(`no such file or directory: ${rest[0]}`);
             } else {
               await rm(target);
+            }
+            break;
+          }
+
+          case 'cp': {
+            if (!rest[0] || !rest[1]) {
+              addError('usage: cp <source> <destination>');
+              break;
+            }
+            const src = resolveDir(cwd, rest[0]);
+            const dest = resolveDir(cwd, rest[1]);
+            if (!(await exists(src))) {
+              addError(`no such file or directory: ${rest[0]}`);
+            } else {
+              await cp(src, dest);
+            }
+            break;
+          }
+
+          case 'mv': {
+            if (!rest[0] || !rest[1]) {
+              addError('usage: mv <source> <destination>');
+              break;
+            }
+            const src = resolveDir(cwd, rest[0]);
+            const dest = resolveDir(cwd, rest[1]);
+            if (!(await exists(src))) {
+              addError(`no such file or directory: ${rest[0]}`);
+            } else {
+              await mv(src, dest);
             }
             break;
           }

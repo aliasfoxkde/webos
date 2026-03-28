@@ -7,6 +7,12 @@ import { useFileOperations } from './use-file-operations';
 import { readdir } from '@/vfs/vfs';
 import type { FileNode } from '@/vfs/types';
 
+interface ClipboardEntry {
+  path: string;
+  name: string;
+  operation: 'copy' | 'cut';
+}
+
 interface FileManagerProps {
   initialPath?: string;
 }
@@ -23,6 +29,7 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
   } | null>(null);
 
   const fileOps = useFileOperations();
+  const [clipboard, setClipboard] = useState<ClipboardEntry | null>(null);
 
   const loadDirectory = useCallback(async (path: string) => {
     const contents = await readdir(path);
@@ -89,6 +96,66 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
     }
   };
 
+  const handleCopy = () => {
+    if (!contextMenu?.file) return;
+    setClipboard({
+      path: `${currentPath}/${contextMenu.file.name}`,
+      name: contextMenu.file.name,
+      operation: 'copy',
+    });
+    handleCloseContextMenu();
+  };
+
+  const handleCut = () => {
+    if (!contextMenu?.file) return;
+    setClipboard({
+      path: `${currentPath}/${contextMenu.file.name}`,
+      name: contextMenu.file.name,
+      operation: 'cut',
+    });
+    handleCloseContextMenu();
+  };
+
+  const handlePaste = async () => {
+    if (!clipboard) return;
+    const destPath = `${currentPath}/${clipboard.name}`;
+    if (clipboard.operation === 'copy') {
+      await fileOps.copyItem(clipboard.path, destPath);
+    } else {
+      await fileOps.moveItem(clipboard.path, destPath);
+      setClipboard(null);
+    }
+    loadDirectory(currentPath);
+    handleCloseContextMenu();
+  };
+
+  // Keyboard shortcuts for copy/cut/paste
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key === 'c' && contextMenu?.file) {
+        e.preventDefault();
+        setClipboard({
+          path: `${currentPath}/${contextMenu.file.name}`,
+          name: contextMenu.file.name,
+          operation: 'copy',
+        });
+      } else if (e.key === 'x' && contextMenu?.file) {
+        e.preventDefault();
+        setClipboard({
+          path: `${currentPath}/${contextMenu.file.name}`,
+          name: contextMenu.file.name,
+          operation: 'cut',
+        });
+      } else if (e.key === 'v' && clipboard) {
+        e.preventDefault();
+        handlePaste();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleContextMenu = (e: React.MouseEvent, file?: FileNode) => {
     e.preventDefault();
     e.stopPropagation();
@@ -123,6 +190,8 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
         onRefresh={() => loadDirectory(currentPath)}
         onNewFolder={handleNewFolder}
         onNewFile={handleNewFile}
+        hasClipboard={!!clipboard}
+        onPaste={handlePaste}
       />
 
       {/* Breadcrumb */}
@@ -167,6 +236,18 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
               >
                 Rename
               </button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-[var(--os-text-primary)] hover:bg-[var(--os-menu-hover)]"
+                onClick={handleCopy}
+              >
+                Copy
+              </button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-[var(--os-text-primary)] hover:bg-[var(--os-menu-hover)]"
+                onClick={handleCut}
+              >
+                Cut
+              </button>
               <div className="h-px bg-[var(--os-menu-border)] my-1 mx-2" />
               <button
                 className="w-full text-left px-3 py-1.5 text-xs text-[var(--os-error)] hover:bg-[var(--os-menu-hover)]"
@@ -195,6 +276,17 @@ export function FileManager({ initialPath = '/home' }: FileManagerProps) {
               >
                 New File
               </button>
+              {clipboard && (
+                <button
+                  className="w-full text-left px-3 py-1.5 text-xs text-[var(--os-text-primary)] hover:bg-[var(--os-menu-hover)]"
+                  onClick={() => {
+                    handlePaste();
+                    handleCloseContextMenu();
+                  }}
+                >
+                  Paste {clipboard.name}
+                </button>
+              )}
               <div className="h-px bg-[var(--os-menu-border)] my-1 mx-2" />
               <button
                 className="w-full text-left px-3 py-1.5 text-xs text-[var(--os-text-secondary)] hover:bg-[var(--os-menu-hover)]"

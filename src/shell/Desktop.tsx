@@ -14,7 +14,7 @@ export function Desktop() {
   const [wallpaper, setWallpaper] = useState(() => getWallpaper(getSavedWallpaperId()));
 
   // Desktop shortcuts: show first 8 registered apps
-  const shortcuts = React.useMemo(() => getAppList().slice(0, 8), []);
+  const shortcuts = React.useMemo(() => getAppList(), []);
   const iconPositions = useDesktopLayoutStore((s) => s.positions);
   const resetPositions = useDesktopLayoutStore((s) => s.resetPositions);
 
@@ -73,7 +73,7 @@ export function Desktop() {
       onClick={closeContextMenu}
     >
       {/* Desktop Icons */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-y-auto">
         {shortcuts.map((shortcut) => {
           const pos = iconPositions[shortcut.id] ?? { x: 16, y: 16 };
           return (
