@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useBrowserHistory } from './use-browser-history';
 import { useBrowserBookmarks } from './use-browser-bookmarks';
+import { writeFile, mkdir } from '@/vfs/vfs';
 
 export function Browser() {
   const [urlInput, setUrlInput] = useState('');
@@ -17,6 +18,39 @@ export function Browser() {
     clearHistory,
   } = useBrowserHistory('about:blank');
   const { bookmarks, isBookmarked, toggleBookmark } = useBrowserBookmarks();
+  const [downloadUrl, setDownloadUrl] = useState('');
+  const [showDownload, setShowDownload] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState('');
+
+  const handleDownload = useCallback(async () => {
+    let url = downloadUrl.trim();
+    if (!url) return;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+
+    setDownloadStatus('Downloading...');
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const contentType = response.headers.get('content-type') || 'application/octet-stream';
+      const blob = await response.blob();
+      const text = await blob.text();
+
+      // Extract filename from URL
+      const urlPath = new URL(url).pathname;
+      const filename = urlPath.split('/').pop() || 'download';
+      const savePath = `/home/Downloads/${filename}`;
+
+      await mkdir('/home/Downloads').catch(() => {});
+      await writeFile(savePath, text, contentType);
+      setDownloadStatus(`Saved to ${savePath}`);
+      setDownloadUrl('');
+      setTimeout(() => { setShowDownload(false); setDownloadStatus(''); }, 2000);
+    } catch (err) {
+      setDownloadStatus(`Error: ${err instanceof Error ? err.message : 'Download failed'}`);
+    }
+  }, [downloadUrl]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -140,6 +174,18 @@ export function Browser() {
           </svg>
         </button>
 
+        <button
+          className={navBtnClass(false)}
+          onClick={() => setShowDownload(!showDownload)}
+          title="Download file to VFS"
+          style={{ color: 'var(--os-text-secondary)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 2V10M8 10L5 7M8 10L11 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 11V13H14V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+
         <form onSubmit={handleSubmit} className="flex-1">
           <input
             type="text"
@@ -166,6 +212,49 @@ export function Browser() {
               width: '60%',
             }}
           />
+        </div>
+      )}
+
+      {/* Download panel */}
+      {showDownload && (
+        <div
+          className="flex items-center gap-2 border-b px-3 py-2"
+          style={{
+            backgroundColor: 'var(--os-bg-secondary)',
+            borderColor: 'var(--os-border)',
+          }}
+        >
+          <span className="text-xs shrink-0" style={{ color: 'var(--os-text-muted)' }}>Save URL:</span>
+          <input
+            type="text"
+            value={downloadUrl}
+            onChange={(e) => setDownloadUrl(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleDownload(); }}
+            placeholder="https://example.com/file.txt"
+            className="flex-1 rounded border px-2 py-1 text-xs outline-none"
+            style={{
+              borderColor: 'var(--os-border)',
+              backgroundColor: 'var(--os-bg-tertiary)',
+              color: 'var(--os-text-primary)',
+            }}
+          />
+          <button
+            onClick={handleDownload}
+            disabled={!downloadUrl.trim()}
+            className="px-2 py-1 text-xs rounded cursor-pointer"
+            style={{
+              backgroundColor: 'var(--os-accent)',
+              color: 'white',
+              opacity: downloadUrl.trim() ? 1 : 0.5,
+            }}
+          >
+            Save
+          </button>
+          {downloadStatus && (
+            <span className="text-xs shrink-0" style={{ color: downloadStatus.startsWith('Error') ? 'var(--os-error)' : 'var(--os-accent)' }}>
+              {downloadStatus}
+            </span>
+          )}
         </div>
       )}
 

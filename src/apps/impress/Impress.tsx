@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { jsPDF } from 'jspdf';
+import { writeFile, readFile } from '@/vfs/vfs';
 
 interface Slide {
   id: string;
@@ -19,17 +20,117 @@ const THEMES = [
   { name: 'Red', background: '#991b1b', text: '#ffffff' },
 ];
 
-export function Impress() {
+interface ImpressProps {
+  filePath?: string;
+  onTitleChange?: (title: string) => void;
+}
+
+export function Impress({ filePath, onTitleChange }: ImpressProps) {
   const [slides, setSlides] = useState<Slide[]>([
     { id: 'slide-1', canvas: '{}', background: '#ffffff' },
   ]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [presenting, setPresenting] = useState(false);
   const [presentSlide, setPresentSlide] = useState(0);
+  const [currentPath, setCurrentPath] = useState(filePath ?? '');
+  const [saved, setSaved] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
   const presentCanvasRef = useRef<HTMLCanvasElement>(null);
   const presentFabricRef = useRef<fabric.Canvas | null>(null);
+
+  // Load file if path provided
+  useEffect(() => {
+    if (filePath) {
+      readFile(filePath).then((file) => {
+        if (file && typeof file.content === 'string' && file.content) {
+          try {
+            const data = JSON.parse(file.content);
+            if (Array.isArray(data)) {
+              setSlides(data);
+            }
+          } catch {
+            // Not valid JSON, ignore
+          }
+        }
+      });
+      setCurrentPath(filePath);
+      setSaved(true);
+    }
+  }, [filePath]);
+
+  // Listen for file open events
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent<string>).detail;
+      if (typeof path === 'string') {
+        readFile(path).then((file) => {
+          if (file && typeof file.content === 'string' && file.content) {
+            try {
+              const data = JSON.parse(file.content);
+              if (Array.isArray(data)) {
+                setSlides(data);
+                setActiveSlide(0);
+              }
+            } catch {
+              // Not valid JSON, ignore
+            }
+          }
+        });
+        setCurrentPath(path);
+        setSaved(true);
+      }
+    };
+    window.addEventListener('webos:open-file', handler);
+    return () => window.removeEventListener('webos:open-file', handler);
+  }, []);
+
+  const saveFile = useCallback(async (data?: Slide[]) => {
+    const toSave = data ?? slides;
+    if (!currentPath) return;
+    await writeFile(currentPath, JSON.stringify(toSave), 'application/json');
+    setSaved(true);
+  }, [currentPath, slides]);
+
+  // Auto-save every 5 seconds
+  useEffect(() => {
+    if (!currentPath) return;
+    const timer = setInterval(() => {
+      if (!saved) {
+        saveFile();
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath, saved]);
+
+  // Mark unsaved when slides change
+  useEffect(() => {
+    setSaved(false);
+  }, [slides]);
+
+  const handleNew = () => {
+    setSlides([{ id: 'slide-1', canvas: '{}', background: '#ffffff' }]);
+    setActiveSlide(0);
+    setCurrentPath('');
+    setSaved(true);
+    onTitleChange?.('Impress');
+  };
+
+  const handleSave = () => {
+    if (currentPath) {
+      saveFile();
+    } else {
+      const name = prompt('Save as:', 'Untitled.impress');
+      if (name) {
+        const path = `/home/Documents/${name}`;
+        setCurrentPath(path);
+        writeFile(path, JSON.stringify(slides), 'application/json');
+        setSaved(true);
+        onTitleChange?.(name);
+      }
+    }
+  };
 
   // Initialize editor canvas
   useEffect(() => {
@@ -328,6 +429,14 @@ export function Impress() {
 
           <div className="flex-1" />
 
+          {!saved && <span className="text-[10px] text-[var(--os-accent)]">Unsaved</span>}
+          {currentPath && <span className="text-[10px] text-[var(--os-text-muted)] ml-1 truncate max-w-[120px]">{currentPath.split('/').pop()}</span>}
+          <button className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]" onClick={handleNew}>
+            New
+          </button>
+          <button className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]" onClick={handleSave}>
+            Save
+          </button>
           <button className="h-6 px-2 text-[11px] rounded hover:bg-[var(--os-bg-hover)] text-[var(--os-text-secondary)]" onClick={() => setPresenting(true)}>
             Present
           </button>

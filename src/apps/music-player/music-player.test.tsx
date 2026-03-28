@@ -3,38 +3,36 @@ import { render, screen } from '@testing-library/react';
 import { MusicPlayer } from './MusicPlayer';
 
 describe('MusicPlayer', () => {
-  it('renders the current song title', () => {
+  it('renders empty state when no tracks', () => {
     render(<MusicPlayer />);
-    expect(screen.getAllByText('Sunrise Drive').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('No music yet')).toBeDefined();
   });
 
-  it('renders the current artist', () => {
+  it('renders upload prompt', () => {
     render(<MusicPlayer />);
-    expect(screen.getAllByText('Synthwave Collective').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Upload audio files to get started')).toBeDefined();
   });
 
-  it('renders play/pause button', () => {
+  it('renders playlist header with count', () => {
     render(<MusicPlayer />);
-    expect(screen.getByLabelText('Play')).toBeDefined();
+    expect(screen.getByText(/Playlist \(0\)/)).toBeDefined();
   });
 
-  it('renders playlist header', () => {
+  it('renders add button', () => {
     render(<MusicPlayer />);
-    expect(screen.getByText('Playlist')).toBeDefined();
+    expect(screen.getByText('+ Add')).toBeDefined();
   });
 
-  it('renders all 6 playlist songs', () => {
-    render(<MusicPlayer />);
-    expect(screen.getByText('Midnight Rain')).toBeDefined();
-    expect(screen.getByText('Digital Horizon')).toBeDefined();
-    expect(screen.getByText('Cloud Nine')).toBeDefined();
-    expect(screen.getByText('Retrograde')).toBeDefined();
-    expect(screen.getByText('Ocean Waves')).toBeDefined();
+  it('has a file input for audio upload', () => {
+    const { container } = render(<MusicPlayer />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).toBeDefined();
+    expect(input.accept).toBe('audio/*');
+    expect(input.multiple).toBe(true);
   });
 
-  it('renders playback controls', () => {
+  it('renders music icon', () => {
     render(<MusicPlayer />);
-    expect(screen.getByLabelText('Previous track')).toBeDefined();
-    expect(screen.getByLabelText('Next track')).toBeDefined();
+    expect(screen.getAllByText('🎵').length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -12,10 +12,13 @@ export function Desktop() {
   const { launchApp } = useKernel();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [wallpaper, setWallpaper] = useState(() => getWallpaper(getSavedWallpaperId()));
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // Desktop shortcuts: show first 8 registered apps
   const shortcuts = React.useMemo(() => getAppList(), []);
   const iconPositions = useDesktopLayoutStore((s) => s.positions);
+  const setPosition = useDesktopLayoutStore((s) => s.setPosition);
   const resetPositions = useDesktopLayoutStore((s) => s.resetPositions);
 
   // Listen for wallpaper changes from Settings app
@@ -30,6 +33,36 @@ export function Desktop() {
 
   const handleDoubleClick = (appId: string) => {
     launchApp(appId);
+  };
+
+  const handleDragStart = (e: React.DragEvent, appId: string) => {
+    const pos = iconPositions[appId];
+    if (!pos) return;
+    setDragId(appId);
+    setDragOffset({
+      x: e.clientX - pos.x,
+      y: e.clientY - pos.y,
+    });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!dragId) return;
+    const desktopRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - dragOffset.x, desktopRect.width - 80));
+    const y = Math.max(0, Math.min(e.clientY - dragOffset.y, desktopRect.height - 96));
+    setPosition(dragId, { x, y });
+    setDragId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragId(null);
   };
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
@@ -73,14 +106,26 @@ export function Desktop() {
       onClick={closeContextMenu}
     >
       {/* Desktop Icons */}
-      <div className="absolute inset-0 overflow-y-auto">
+      <div
+        className="absolute inset-0 overflow-y-auto"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         {shortcuts.map((shortcut) => {
           const pos = iconPositions[shortcut.id] ?? { x: 16, y: 16 };
           return (
             <div
               key={shortcut.id}
               className="absolute"
-              style={{ left: pos.x, top: pos.y }}
+              draggable
+              style={{
+                left: pos.x,
+                top: pos.y,
+                opacity: dragId === shortcut.id ? 0.5 : 1,
+                cursor: dragId ? 'grabbing' : 'grab',
+              }}
+              onDragStart={(e) => handleDragStart(e, shortcut.id)}
+              onDragEnd={handleDragEnd}
             >
               <DesktopIcon
                 appId={shortcut.id}

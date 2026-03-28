@@ -89,6 +89,7 @@ const MIME_MAP: Record<string, string> = {
 
   // WebOS custom types
   draw: 'application/x-webos-draw',
+  impress: 'application/x-webos-impress',
   note: 'application/x-webos-note',
 };
 

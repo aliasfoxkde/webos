@@ -70,6 +70,7 @@ export function registerBuiltinApps(): void {
       permissions: ['filesystem:read', 'filesystem:write'],
       singleton: false,
       systemApp: true,
+      fileAssociations: ['application/x-webos-impress'],
     },
     {
       id: 'pdf-viewer',
