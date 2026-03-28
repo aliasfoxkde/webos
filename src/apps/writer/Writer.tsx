@@ -63,6 +63,24 @@ export function Writer({ filePath, onTitleChange }: WriterProps) {
     }
   }, [filePath, editor]);
 
+  // Listen for file open events from File Manager
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent<string>).detail;
+      if (typeof path === 'string' && editor) {
+        setCurrentPath(path);
+        setSaved(true);
+        readFile(path).then((file) => {
+          if (file && typeof file.content === 'string' && file.content) {
+            editor.commands.setContent(file.content);
+          }
+        });
+      }
+    };
+    window.addEventListener('webos:open-file', handler);
+    return () => window.removeEventListener('webos:open-file', handler);
+  }, [editor]);
+
   // Auto-save every 5 seconds
   useEffect(() => {
     if (!editor || !currentPath) return;

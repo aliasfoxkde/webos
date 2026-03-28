@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useBrowserHistory } from './use-browser-history';
+import { useBrowserBookmarks } from './use-browser-bookmarks';
 
 export function Browser() {
   const [urlInput, setUrlInput] = useState('');
@@ -15,6 +16,7 @@ export function Browser() {
     canGoForward,
     clearHistory,
   } = useBrowserHistory('about:blank');
+  const { bookmarks, isBookmarked, toggleBookmark } = useBrowserBookmarks();
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -127,6 +129,17 @@ export function Browser() {
           </svg>
         </button>
 
+        <button
+          className={navBtnClass(false)}
+          onClick={() => toggleBookmark(current.url, current.title || current.url)}
+          title={isBookmarked(current.url) ? 'Remove bookmark' : 'Bookmark this page'}
+          style={{ color: isBookmarked(current.url) ? 'var(--os-accent)' : 'var(--os-text-secondary)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill={isBookmarked(current.url) ? 'currentColor' : 'none'}>
+            <path d="M8 1L10.1 5.4L15 6.1L11.5 9.5L12.3 14.4L8 12.1L3.7 14.4L4.5 9.5L1 6.1L5.9 5.4L8 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+          </svg>
+        </button>
+
         <form onSubmit={handleSubmit} className="flex-1">
           <input
             type="text"
@@ -183,6 +196,33 @@ export function Browser() {
               >
                 Clear History
               </button>
+            )}
+            {bookmarks.length > 0 && (
+              <div className="flex flex-col gap-1 w-full max-w-md px-4">
+                <span className="text-xs font-medium" style={{ color: 'var(--os-text-muted)' }}>
+                  Bookmarks
+                </span>
+                {bookmarks.map((bm) => (
+                  <button
+                    key={bm.url}
+                    onClick={() => {
+                      setUrlInput(bm.url);
+                      setIsLoading(true);
+                      navigate(bm.url, bm.title);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors hover:bg-[var(--os-bg-hover)]"
+                    style={{
+                      backgroundColor: 'var(--os-bg-secondary)',
+                      color: 'var(--os-text-primary)',
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="var(--os-accent)">
+                      <path d="M6 0.5L7.6 4.1L11.5 4.6L8.7 7.1L9.5 11L6 9.1L2.5 11L3.3 7.1L0.5 4.6L4.4 4.1L6 0.5Z"/>
+                    </svg>
+                    <span className="truncate">{bm.title}</span>
+                  </button>
+                ))}
+              </div>
             )}
             <form onSubmit={handleSubmit} className="w-full max-w-md px-4">
               <input

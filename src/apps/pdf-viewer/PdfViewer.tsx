@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { readFile } from '@/vfs/vfs';
 
 // Set worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -10,6 +11,7 @@ interface PdfViewerProps {
 }
 
 export function PdfViewer({ filePath, fileData }: PdfViewerProps) {
+  const [activeFilePath, setActiveFilePath] = useState(filePath);
   const [pdf, setPdf] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -17,6 +19,18 @@ export function PdfViewer({ filePath, fileData }: PdfViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Listen for file open events from File Manager
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent<string>).detail;
+      if (typeof path === 'string') {
+        setActiveFilePath(path);
+      }
+    };
+    window.addEventListener('webos:open-file', handler);
+    return () => window.removeEventListener('webos:open-file', handler);
+  }, []);
 
   // Load PDF
   useEffect(() => {
@@ -31,11 +45,17 @@ export function PdfViewer({ filePath, fileData }: PdfViewerProps) {
 
         if (fileData) {
           data = fileData;
-        } else if (filePath) {
-          // For VFS files, read and convert
-          const response = await fetch(filePath);
-          if (!response.ok) throw new Error(`Failed to load: ${filePath}`);
-          data = await response.arrayBuffer();
+        } else if (activeFilePath) {
+          // Read from VFS
+          const node = await readFile(activeFilePath);
+          if (!node) throw new Error(`File not found: ${activeFilePath}`);
+          if (node.content instanceof ArrayBuffer) {
+            data = node.content as ArrayBuffer;
+          } else if (typeof node.content === 'string') {
+            data = new TextEncoder().encode(node.content).buffer as ArrayBuffer;
+          } else {
+            throw new Error('Unsupported file format');
+          }
         } else {
           throw new Error('No PDF source provided');
         }
@@ -57,7 +77,7 @@ export function PdfViewer({ filePath, fileData }: PdfViewerProps) {
 
     load();
     return () => { cancelled = true; };
-  }, [filePath, fileData]);
+  }, [activeFilePath, fileData]);
 
   // Render page
   useEffect(() => {

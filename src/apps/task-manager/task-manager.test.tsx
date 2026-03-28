@@ -1,13 +1,22 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
+const mockRefreshProcesses = vi.fn();
+
 vi.mock('@/stores/kernel-store', () => ({
-  useKernelStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({
-      processes: [],
-      refreshProcesses: vi.fn(),
-      closeApp: vi.fn(),
-    }),
+  useKernelStore: Object.assign(
+    (selector: (s: Record<string, unknown>) => unknown) =>
+      selector({
+        processes: [],
+        refreshProcesses: mockRefreshProcesses,
+        closeApp: vi.fn(),
+      }),
+    {
+      getState: () => ({
+        refreshProcesses: mockRefreshProcesses,
+      }),
+    },
+  ),
 }));
 
 vi.mock('@/wm/window-store', () => ({

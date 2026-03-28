@@ -7,11 +7,24 @@ interface ImageViewerProps {
 }
 
 export function ImageViewer({ filePath, url: urlProp }: ImageViewerProps) {
+  const [activeFilePath, setActiveFilePath] = useState(filePath);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const objectUrlRef = useRef<string | null>(null);
+
+  // Listen for file open events from File Manager
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent<string>).detail;
+      if (typeof path === 'string') {
+        setActiveFilePath(path);
+      }
+    };
+    window.addEventListener('webos:open-file', handler);
+    return () => window.removeEventListener('webos:open-file', handler);
+  }, []);
 
   // Load image from VFS filePath or external URL
   useEffect(() => {
@@ -22,10 +35,10 @@ export function ImageViewer({ filePath, url: urlProp }: ImageViewerProps) {
       setError(null);
 
       try {
-        if (filePath) {
-          const node = await readFile(filePath);
+        if (activeFilePath) {
+          const node = await readFile(activeFilePath);
           if (!node) {
-            if (!cancelled) setError(`File not found: ${filePath}`);
+            if (!cancelled) setError(`File not found: ${activeFilePath}`);
             return;
           }
           if (node.content instanceof ArrayBuffer) {
@@ -61,7 +74,7 @@ export function ImageViewer({ filePath, url: urlProp }: ImageViewerProps) {
         objectUrlRef.current = null;
       }
     };
-  }, [filePath, urlProp]);
+  }, [activeFilePath, urlProp]);
 
   // Cleanup object URL on unmount
   useEffect(() => {

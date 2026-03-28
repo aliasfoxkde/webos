@@ -56,6 +56,30 @@ export function Draw({ filePath }: DrawProps) {
     }
   }, [filePath]);
 
+  // Listen for file open events from File Manager
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent<string>).detail;
+      if (typeof path === 'string' && fabricRef.current) {
+        setCurrentPath(path);
+        setSaved(true);
+        readFile(path).then((file) => {
+          if (file && typeof file.content === 'string' && file.content) {
+            try {
+              fabricRef.current?.loadFromJSON(file.content).then(() => {
+                fabricRef.current?.renderAll();
+              });
+            } catch {
+              // Invalid JSON, ignore
+            }
+          }
+        });
+      }
+    };
+    window.addEventListener('webos:open-file', handler);
+    return () => window.removeEventListener('webos:open-file', handler);
+  }, []);
+
   // Tool handlers
   const handleToolChange = useCallback((tool: DrawTool) => {
     setActiveTool(tool);

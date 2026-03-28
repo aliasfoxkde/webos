@@ -4,7 +4,6 @@ import { useWindowStore } from '@/wm/window-store';
 
 export function TaskManager() {
   const processes = useKernelStore((s) => s.processes);
-  const refreshProcesses = useKernelStore((s) => s.refreshProcesses);
   const closeApp = useKernelStore((s) => s.closeApp);
   const windows = useWindowStore((s) => s.windows);
   const closeWindow = useWindowStore((s) => s.close);
@@ -12,16 +11,17 @@ export function TaskManager() {
 
   // Auto-refresh every 2 seconds
   useEffect(() => {
-    refreshProcesses();
-    setLastRefresh(Date.now());
-
-    const interval = setInterval(() => {
-      refreshProcesses();
+    const refresh = () => {
+      useKernelStore.getState().refreshProcesses();
       setLastRefresh(Date.now());
-    }, 2000);
+    };
+
+    refresh();
+
+    const interval = setInterval(refresh, 2000);
 
     return () => clearInterval(interval);
-  }, [refreshProcesses]);
+  }, []);
 
   const killProcess = useCallback(
     (processId: string, windowId: string) => {
@@ -95,7 +95,7 @@ export function TaskManager() {
           </span>
           <button
             onClick={() => {
-              refreshProcesses();
+              useKernelStore.getState().refreshProcesses();
               setLastRefresh(Date.now());
             }}
             className="rounded px-2 py-0.5 text-xs hover:bg-[var(--os-bg-hover)]"
